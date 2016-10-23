@@ -40,6 +40,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ArduinoDevice/RegisterBasedWiredDevice}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ArduinoDevice/WiredDevice}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ArduinoDevice/RegisterBasedSPIDevice}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ArduinoDevice/RegisterBasedDevice}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ArduinoDevice/SPIDevice}&quot;"/>
 								</option>
 								<inputType id="de.innot.avreclipse.cppcompiler.input.1873814054" superClass="de.innot.avreclipse.cppcompiler.input"/>
@@ -69,5 +70,9 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/ArduinoRadioFrequencyIdentification"/>
+		</configuration>
+	</storageModule>
 </cproject>

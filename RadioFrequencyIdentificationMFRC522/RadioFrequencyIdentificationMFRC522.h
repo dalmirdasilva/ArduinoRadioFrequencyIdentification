@@ -7,11 +7,15 @@
 #define __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_MFRC522_H__ 1
 
 #include <RadioFrequencyIdentification.h>
-#include <RegisterBasedSPIDevice.h>
+#include <RegisterBasedDevice.h>
 
-class RadioFrequencyIdentificationMFRC522: public RadioFrequencyIdentification, public RegisterBasedSPIDevice {
+class RadioFrequencyIdentificationMFRC522: public RadioFrequencyIdentification, public RegisterBasedDevice {
+
+    RegisterBasedDevice *device;
 
     unsigned char resetPin;
+
+    unsigned char lastError;
 
 public:
 
@@ -95,8 +99,11 @@ public:
         // Selects the speed of the serial UART interface
         SERIAL_SPEED = 0x1f,
 
-        // Shows the MSB and LSB values of the CRC calculation
-        CRC_RESULT = 0x21,
+        // Shows the MSB and LSB values of the CRC calculation (HIGH)
+        CRC_RESULT_HIDH = 0x21,
+
+        // Shows the MSB and LSB values of the CRC calculation (LOW)
+        CRC_RESULT_LOW = 0x22,
 
         // Controls the ModWidth setting
         MOD_WIDTH = 0x24,
@@ -117,19 +124,19 @@ public:
         T_MODE = 0x2a,
 
         // Defines settings for the internal timer
-        T_PRESCALER = 0x2b,
+        T_PRESCALER_LOW = 0x2b,
 
         // Defines the 16-bit timer reload value (HIGH)
-        T_RELOAD_H = 0x2c,
+        T_RELOAD_HIGH = 0x2c,
 
         // Defines the 16-bit timer reload value (LOW)
-        T_RELOAD_L = 0x2d,
+        T_RELOAD_LOW = 0x2d,
 
         // Shows the 16-bit timer value (HIGH)
-        T_COUNTER_VAL_H = 0x2e,
+        T_COUNTER_VAL_HIGH = 0x2e,
 
         // Shows the 16-bit timer value (LOW)
-        T_COUNTER_VAL_L = 0x2f,
+        T_COUNTER_VAL_LOW = 0x2f,
 
         // Test signal configuration
         TEST_SEL1 = 0x31,
@@ -198,10 +205,55 @@ public:
         SOFT_RESET = 0x0F
     };
 
+    enum Error {
+        NO_ERROR = 0x00,
+        GENERAL_ERROR = 0x01,
+        TIMEOUT_ERROR = 0x02,
+        COMMUNICATION_ERROR = 0x03,
+        CRC_ERROR = 0x04
+    };
+
     enum Mask {
         TX_CONTROL_TX1_RF_EN = 0x01,
         TX_CONTROL_TX2_RF_EN = 0x02,
         TX_CONTROL_TX_RF_EN = TX_CONTROL_TX1_RF_EN | TX_CONTROL_TX2_RF_EN,
+        CONTROL_T_STOP_NOW = 0x80,
+        CONTROL_T_START_NOW = 0x40,
+        COM_I_EN_INTERRUPT_EN = 0x7f,
+        COM_IRQ_TIMER_IRQ = 0x01,
+        COM_IRQ_ERR_IRQ = 0x02,
+        COM_IRQ_LO_ALERT_IRQ = 0x04,
+        COM_IRQ_HI_ALERT_IRQ = 0x08,
+        COM_IRQ_IDLE_IRQ = 0x10,
+        COM_IRQ_RX_IRQ = 0x20,
+        COM_IRQ_TX_IRQ = 0x40,
+        COM_IRQ_ALL_IRQ = 0x7f,
+        COM_IRQ_SET1 = 0x80,
+        DIV_I_EN_CRC_I_EN = 0x04,
+        DIV_I_EN_MFIN_ACT_I_EN = 0x10,
+        DIV_I_EN_INTERRUPT_EN = DIV_I_EN_CRC_I_EN | DIV_I_EN_MFIN_ACT_I_EN,
+        DIV_IRQ_CRC_IRQ = 0x04,
+        DIV_IRQ_MFIN_ACT_IRQ = 0x10,
+        DIV_IRQ_ALL_IRQ = DIV_IRQ_CRC_IRQ | DIV_IRQ_MFIN_ACT_IRQ,
+        FIFO_LEVEL_FLUSH_BUFFER = 0x80,
+        FIFO_LEVEL_FIFO_LEVEL = 0x7f,
+        WATER_LEVEL_WATER_LEVEL = 0x3f,
+        BIT_FRAMING_START_SEND = 0x80
+    };
+
+    enum Interrupt : unsigned int {
+        NONE_IRQ = 0x0000,
+        COM_TIMER_IRQ = 0x0001,
+        COM_ERR_IRQ = 0X0002,
+        COM_LO_ALERT_IRQ = 0X0004,
+        COM_HI_ALERT_IRQ = 0X0008,
+        COM_IDLE_IRQ = 0X0010,
+        COM_RX_IRQ = 0X0020,
+        COM_TX_IRQ = 0X0040,
+        COM_ALL_IRQ = 0x007f,
+        DIV_CRC_IRQ = 0x0400,
+        DIV_MFIN_ACT_IRQ = 0x1000,
+        DIV_ALL_IRQ = DIV_CRC_IRQ | DIV_MFIN_ACT_IRQ
     };
 
     /**
@@ -1146,15 +1198,87 @@ public:
         unsigned char value;
     };
 
-    RadioFrequencyIdentificationMFRC522(unsigned char ssPin, unsigned char resetPin);
+    struct Uid {
+
+        // Number of bytes in the UID. 4, 7 or 10.
+        unsigned char size;
+
+        unsigned char uid[10];
+
+        // The SAK (Select acknowledge) byte returned from the PICC after successful selection.
+        unsigned char sak;
+    };
+
+    RadioFrequencyIdentificationMFRC522(RegisterBasedDevice *device, unsigned char resetPin);
 
     void initialize();
+
+    void sendCommand(Command command) {
+        writeRegister(COMMAND, (unsigned char) command);
+    }
+
+    unsigned char getLastError() {
+        return lastError;
+    }
+
+    void clearLastError() {
+        lastError = NO_ERROR;
+    }
 
     void softReset();
 
     void setAntennaOn();
 
     void setAntennaOff();
+
+    void configureTimer(unsigned int prescaler, unsigned int reload, bool autoStart, bool autoRestart);
+
+    void startTimer();
+
+    void stopTimer();
+
+    void enableInterrupt(Interrupt interrupt);
+
+    void clearInterrupt(Interrupt interrupt);
+
+    void flushQueue();
+
+    void setWaterLevel(unsigned char level);
+
+    int generateRandomId(unsigned char buf[10]);
+
+    int executeCommand(Command command, unsigned char *output, unsigned char *input, unsigned char outputLen, bool checkCRC);
+
+    unsigned int calculateCRC(unsigned char *buff, unsigned char len);
+
+    /**
+     * Reads values from the device, starting by the reg register.
+     *
+     * @param reg           The register number.
+     * @param buf           The buffer where to place read bytes.
+     *                      MSB become LSB inside buffer.
+     * @param len           How many bytes to read.
+     * @return              If >= 0: How many bytes were read.
+     *                      If < 0: Error code:
+     *                      <ul>
+     *                          <li>-1: data too long to fit in transmit buffer</li>
+     *                          <li>-2: received NACK on transmit of address</li>
+     *                          <li>-3: received NACK on transmit of data</li>
+     *                          <li>-4: other error</li>
+     *                          <li>-5: timeout</li>
+     *                      </ul>
+     */
+    int readRegisterBlock(unsigned char reg, unsigned char *buf, unsigned char len);
+
+    /**
+     * Writes a sequence of values to a sequence of registers, starting by the reg address.
+     *
+     * @param reg           The register number.
+     * @param buf           The buffer.
+     * @param len           Buffer length.
+     * @return              The result of Wire.endTransmission().
+     */
+    unsigned char writeRegisterBlock(unsigned char reg, unsigned char *buf, unsigned char len);
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_MFRC522_H__
