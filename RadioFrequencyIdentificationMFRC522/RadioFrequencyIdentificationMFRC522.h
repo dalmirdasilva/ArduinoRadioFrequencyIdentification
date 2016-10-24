@@ -8,8 +8,48 @@
 
 #include <RadioFrequencyIdentification.h>
 #include <RegisterBasedDevice.h>
+#include <Arduino.h>
 
-class RadioFrequencyIdentificationMFRC522: public RadioFrequencyIdentification, public RegisterBasedDevice {
+#define MFRC522_DEFAULT_TIMEOUT 100
+
+// Version 0.0 (0x90)
+// Philips Semiconductors; Preliminary Specification Revision 2.0 - 01 August 2005; 16.1 self-test
+const unsigned char MFRC522_FIRMWARE_REFERENCE_V0_0[] PROGMEM = { 0x00, 0x87, 0x98, 0x0f,
+        0x49, 0xff, 0x07, 0x19, 0xbf, 0x22, 0x30, 0x49, 0x59, 0x63, 0xad, 0xca, 0x7f, 0xe3,
+        0x4e, 0x03, 0x5c, 0x4e, 0x49, 0x50, 0x47, 0x9a, 0x37, 0x61, 0xe7, 0xe2, 0xc6, 0x2e,
+        0x75, 0x5a, 0xed, 0x04, 0x3d, 0x02, 0x4b, 0x78, 0x32, 0xff, 0x58, 0x3b, 0x7c, 0xe9,
+        0x00, 0x94, 0xb4, 0x4a, 0x59, 0x5b, 0xfd, 0xc9, 0x29, 0xdf, 0x35, 0x96, 0x98, 0x9e,
+        0x4f, 0x30, 0x32, 0x8d };
+
+// Version 1.0 (0x91)
+// NXP Semiconductors; Rev. 3.8 - 17 September 2014; 16.1.1 self-test
+const byte MFRC522_FIRMWARE_REFERENCE_V1_0[] PROGMEM = { 0x00, 0xc6, 0x37, 0xd5, 0x32, 0xb7,
+        0x57, 0x5c, 0xc2, 0xd8, 0x7c, 0x4d, 0xd9, 0x70, 0xc7, 0x73, 0x10, 0xe6, 0xd2, 0xaa,
+        0x5e, 0xa1, 0x3e, 0x5a, 0x14, 0xaf, 0x30, 0x61, 0xc9, 0x70, 0xdb, 0x2e, 0x64, 0x22,
+        0x72, 0xb5, 0xbd, 0x65, 0xf4, 0xec, 0x22, 0xbc, 0xd3, 0x72, 0x35, 0xcd, 0xaa, 0x41,
+        0x1f, 0xa7, 0xf3, 0x53, 0x14, 0xde, 0x7e, 0x02, 0xd9, 0x0f, 0xb5, 0x5e, 0x25, 0x1d,
+        0x29, 0x79 };
+
+// Version 2.0 (0x92)
+// NXP Semiconductors; Rev. 3.8 - 17 September 2014; 16.1.1 self-test
+const byte MFRC522_FIRMWARE_REFERENCE_V2_0[] PROGMEM = { 0x00, 0xeb, 0x66, 0xba, 0x57, 0xbf,
+        0x23, 0x95, 0xd0, 0xe3, 0x0d, 0x3d, 0x27, 0x89, 0x5c, 0xde, 0x9d, 0x3b, 0xa7, 0x00,
+        0x21, 0x5b, 0x89, 0x82, 0x51, 0x3a, 0xeb, 0x02, 0x0c, 0xa5, 0x00, 0x49, 0x7c, 0x84,
+        0x4d, 0xb3, 0xcc, 0xd2, 0x1b, 0x81, 0x5d, 0x48, 0x76, 0xd5, 0x71, 0x61, 0x21, 0xa9,
+        0x86, 0x96, 0x83, 0x38, 0xcf, 0x9d, 0x5b, 0x6d, 0xdc, 0x15, 0xba, 0x3e, 0x7d, 0x95,
+        0x3b, 0x2f };
+
+// Clone
+// Fudan Semiconductor FM17522 (0x88)
+const byte FM17522_FIRMWARE_REFERENCE[] PROGMEM = { 0x00, 0xd6, 0x78, 0x8c, 0xe2, 0xaa,
+        0x0c, 0x18, 0x2a, 0xb8, 0x7a, 0x7f, 0xd3, 0x6a, 0xcf, 0x0b, 0xb1, 0x37, 0x63, 0x4b,
+        0x69, 0xae, 0x91, 0xc7, 0xc3, 0x97, 0xae, 0x77, 0xf4, 0x37, 0xd7, 0x9b, 0x7c, 0xf5,
+        0x3c, 0x11, 0x8f, 0x15, 0xc3, 0xd7, 0xc1, 0x5b, 0x00, 0x2a, 0xd0, 0x75, 0xde, 0x9e,
+        0x51, 0x64, 0xab, 0x3e, 0xe9, 0x15, 0xb5, 0xab, 0x56, 0x9a, 0x98, 0x82, 0x26, 0xea,
+        0x2a, 0x62 };
+
+class RadioFrequencyIdentificationMFRC522: public RadioFrequencyIdentification,
+        public RegisterBasedDevice {
 
     RegisterBasedDevice *device;
 
@@ -238,18 +278,20 @@ public:
         FIFO_LEVEL_FLUSH_BUFFER = 0x80,
         FIFO_LEVEL_FIFO_LEVEL = 0x7f,
         WATER_LEVEL_WATER_LEVEL = 0x3f,
-        BIT_FRAMING_START_SEND = 0x80
+        BIT_FRAMING_START_SEND = 0x80,
+        AUTO_TEST_ENABLE = 0x09
     };
 
-    enum Interrupt : unsigned int {
-        NONE_IRQ = 0x0000,
+    enum Interrupt
+        : unsigned int {
+            NONE_IRQ = 0x0000,
         COM_TIMER_IRQ = 0x0001,
-        COM_ERR_IRQ = 0X0002,
-        COM_LO_ALERT_IRQ = 0X0004,
-        COM_HI_ALERT_IRQ = 0X0008,
-        COM_IDLE_IRQ = 0X0010,
-        COM_RX_IRQ = 0X0020,
-        COM_TX_IRQ = 0X0040,
+        COM_ERR_IRQ = 0x0002,
+        COM_LO_ALERT_IRQ = 0x0004,
+        COM_HI_ALERT_IRQ = 0x0008,
+        COM_IDLE_IRQ = 0x0010,
+        COM_RX_IRQ = 0x0020,
+        COM_TX_IRQ = 0x0040,
         COM_ALL_IRQ = 0x007f,
         DIV_CRC_IRQ = 0x0400,
         DIV_MFIN_ACT_IRQ = 0x1000,
@@ -1209,7 +1251,15 @@ public:
         unsigned char sak;
     };
 
-    RadioFrequencyIdentificationMFRC522(RegisterBasedDevice *device, unsigned char resetPin);
+    enum Version {
+        CLONE = 0x88,
+        V0_0 = 0x90,
+        V1_0 = 0x91,
+        V2_0 = 0x92
+    };
+
+    RadioFrequencyIdentificationMFRC522(RegisterBasedDevice *device,
+            unsigned char resetPin);
 
     void initialize();
 
@@ -1231,7 +1281,8 @@ public:
 
     void setAntennaOff();
 
-    void configureTimer(unsigned int prescaler, unsigned int reload, bool autoStart, bool autoRestart);
+    void configureTimer(unsigned int prescaler, unsigned int reload, bool autoStart,
+    bool autoRestart);
 
     void startTimer();
 
@@ -1247,9 +1298,49 @@ public:
 
     int generateRandomId(unsigned char buf[10]);
 
-    int executeCommand(Command command, unsigned char *output, unsigned char *input, unsigned char outputLen, bool checkCRC);
+    int communicate(Command command, unsigned char *output, unsigned char *input,
+            unsigned char outputLen, bool checkCRC);
 
     unsigned int calculateCRC(unsigned char *buff, unsigned char len);
+
+    bool waitForRegisterBits(unsigned char reg, unsigned char mask) {
+        return waitForRegisterBits(reg, mask, MFRC522_DEFAULT_TIMEOUT);
+    }
+
+    bool waitForRegisterBits(unsigned char reg, unsigned char mask, unsigned long timeout);
+
+    Version getVersion();
+
+    /**
+     * 1. Perform a soft reset.
+     * 2. Clear the internal buffer by writing 25 bytes of 00h and implement the Config command.
+     * 3. Enable the self test by writing 09h to the AutoTestReg register.
+     * 4. Write 00h to the FIFO buffer.
+     * 5. Start the self test with the CalcCRC command.
+     * 6. The self test is initiated.
+     * 7. When the self test has completed, the FIFO buffer contains the following 64 bytes:
+     *
+     * FIFO buffer byte values for MFRC522 version 1.0:
+     * 00h, C6h, 37h, D5h, 32h, B7h, 57h, 5Ch,
+     * C2h, D8h, 7Ch, 4Dh, D9h, 70h, C7h, 73h,
+     * 10h, E6h, D2h, AAh, 5Eh, A1h, 3Eh, 5Ah,
+     * 14h, AFh, 30h, 61h, C9h, 70h, DBh, 2Eh,
+     * 64h, 22h, 72h, B5h, BDh, 65h, F4h, ECh,
+     * 22h, BCh, D3h, 72h, 35h, CDh, AAh, 41h,
+     * 1Fh, A7h, F3h, 53h, 14h, DEh, 7Eh, 02h,
+     * D9h, 0Fh, B5h, 5Eh, 25h, 1Dh, 29h, 79h
+     *
+     * FIFO buffer byte values for MFRC522 version 2.0:
+     * 00h, EBh, 66h, BAh, 57h, BFh, 23h, 95h,
+     * D0h, E3h, 0Dh, 3Dh, 27h, 89h, 5Ch, DEh,
+     * 9Dh, 3Bh, A7h, 00h, 21h, 5Bh, 89h, 82h,
+     * 51h, 3Ah, EBh, 02h, 0Ch, A5h, 00h, 49h,
+     * 7Ch, 84h, 4Dh, B3h, CCh, D2h, 1Bh, 81h,
+     * 5Dh, 48h, 76h, D5h, 71h, 061h, 21h, A9h,
+     * 86h, 96h, 83h, 38h, CFh, 9Dh, 5Bh, 6Dh,
+     * DCh, 15h, BAh, 3Eh, 7Dh, 95h, 03Bh, 2Fh
+     */
+    bool performSelfTest();
 
     /**
      * Reads values from the device, starting by the reg register.
@@ -1278,7 +1369,8 @@ public:
      * @param len           Buffer length.
      * @return              The result of Wire.endTransmission().
      */
-    unsigned char writeRegisterBlock(unsigned char reg, unsigned char *buf, unsigned char len);
+    unsigned char writeRegisterBlock(unsigned char reg, unsigned char *buf,
+            unsigned char len);
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_MFRC522_H__

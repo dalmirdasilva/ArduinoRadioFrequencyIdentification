@@ -43,6 +43,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ArduinoDevice/RegisterBasedDevice}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/ArduinoDevice/SPIDevice}&quot;"/>
 								</option>
+								<option id="de.innot.avreclipse.cppcompiler.option.otherflags.1517822027" superClass="de.innot.avreclipse.cppcompiler.option.otherflags" value="-std=c++11" valueType="string"/>
 								<inputType id="de.innot.avreclipse.cppcompiler.input.1873814054" superClass="de.innot.avreclipse.cppcompiler.input"/>
 							</tool>
 							<tool id="de.innot.avreclipse.tool.linker.winavr.base.391544542" name="AVR C Linker" superClass="de.innot.avreclipse.tool.linker.winavr.base"/>
