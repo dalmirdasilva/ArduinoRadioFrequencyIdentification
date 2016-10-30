@@ -12,6 +12,12 @@
 
 #define MFRC522_DEFAULT_TIMEOUT 100
 
+#define MFR522_INT_TO_EN_REG(i)     (i > COM_ALL_IRQ) ? DIV_I_EN : COM_I_EN
+#define MFR522_INT_TO_EN_MASK(i)    (i > COM_ALL_IRQ) ? (i >> 8) & DIV_I_EN_INTERRUPT_EN : i & COM_I_EN_INTERRUPT_EN
+
+#define MFR522_INT_TO_IRQ_REG(i)    (i > COM_ALL_IRQ) ? DIV_IRQ : COM_IRQ
+#define MFR522_INT_TO_IRQ_MASK(i)   (i > COM_ALL_IRQ) ? (i >> 8) & DIV_IRQ_ALL_IRQ : i & COM_IRQ_ALL_IRQ
+
 // Version 0.0 (0x90)
 // Philips Semiconductors; Preliminary Specification Revision 2.0 - 01 August 2005; 16.1 self-test
 const unsigned char MFRC522_FIRMWARE_REFERENCE_V0_0[] PROGMEM = { 0x00, 0x87, 0x98, 0x0f,
@@ -275,6 +281,7 @@ public:
         DIV_IRQ_CRC_IRQ = 0x04,
         DIV_IRQ_MFIN_ACT_IRQ = 0x10,
         DIV_IRQ_ALL_IRQ = DIV_IRQ_CRC_IRQ | DIV_IRQ_MFIN_ACT_IRQ,
+        DIV_IRQ_SET2 = 0x80,
         FIFO_LEVEL_FLUSH_BUFFER = 0x80,
         FIFO_LEVEL_FIFO_LEVEL = 0x7f,
         WATER_LEVEL_WATER_LEVEL = 0x3f,
@@ -1281,14 +1288,59 @@ public:
 
     void setAntennaOff();
 
+    /**
+     * The timer unit can be used to measure the time interval between two events or to indicate
+     * that a specific event occurred after a specific time. The timer can be triggered by events
+     * explained in the paragraphs below. The timer does not influence any internal events, for
+     * example, a time-out during data reception does not automatically influence the reception
+     * process. Furthermore, several timer-related bits can be used to generate an interrupt.
+     * The timer has an input clock of 13.56 MHz derived from the 27.12 MHz quartz crystal
+     * oscillator. The timer consists of two stages: prescaler and counter.
+     * The prescaler (TPrescaler) is a 12-bit counter. The reload values (TReloadVal_Hi[7:0] and
+     * TReloadVal_Lo[7:0]) for TPrescaler can be set between 0 and 4095 in the TModeReg
+     * register’s TPrescaler_Hi[3:0] bits and TPrescalerReg register’s TPrescaler_Lo[7:0] bits.
+     * The reload value for the counter is defined by 16 bits between 0 and 65535 in the
+     * TReloadReg register.
+     * The current value of the timer is indicated in the TCounterValReg register.
+     * When the counter reaches 0, an interrupt is automatically generated, indicated by the
+     * ComIrqReg register’s TimerIRq bit setting. If enabled, this event can be indicated on
+     * pin IRQ. The TimerIRq bit can be set and reset by the host. Depending on the
+     * configuration, the timer will stop at 0 or restart with the value set in the TReloadReg
+     * register.
+     * The timer status is indicated by the Status1Reg register’s TRunning bit.
+     * The timer can be started manually using the ControlReg register’s TStartNow bit and
+     * stopped using the ControlReg register’s TStopNow bit.
+     * The timer can also be activated automatically to meet any dedicated protocol
+     * requirements by setting the TModeReg register’s TAuto bit to logic 1.
+     *
+     * @param   prescaler       12 bit prescaler value.
+     * @param   reload          16 bit reload value.
+     * @param   autoStart       1: timer starts automatically at the end of the transmission in
+     *                          all communication modes at all speeds
+     *                          if the RxModeReg register’s RxMultiple bit is not set, the
+     *                          timer stops immediately after receiving the 5th bit (1 start bit, 4 data bits)
+     *                          if the RxMultiple bit is set to logic 1 the timer never stops, in
+     *                          which case the timer can be stopped by setting the
+     *                          ControlReg register’s TStopNow bit to logic 1
+     *                          0: indicates that the timer is not influenced by the protocol
+     * @param   autoRestart     1: timer automatically restarts its count-down from the 16-bit
+     *                          timer reload value instead of counting down to zero
+     *                          0 timer decrements to 0 and the ComIrqReg register’s
+     *                          TimerIRq bit is set to logic 1
+     */
     void configureTimer(unsigned int prescaler, unsigned int reload, bool autoStart,
-    bool autoRestart);
+            bool autoRestart);
 
     void startTimer();
 
     void stopTimer();
 
+    /**
+     *
+     */
     void enableInterrupt(Interrupt interrupt);
+
+    void disableInterrupt(Interrupt interrupt);
 
     void clearInterrupt(Interrupt interrupt);
 

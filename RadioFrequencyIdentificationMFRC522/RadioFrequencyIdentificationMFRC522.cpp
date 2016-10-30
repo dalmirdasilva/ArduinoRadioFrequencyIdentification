@@ -88,25 +88,18 @@ void RadioFrequencyIdentificationMFRC522::stopTimer() {
 }
 
 void RadioFrequencyIdentificationMFRC522::enableInterrupt(Interrupt interrupt) {
-    bool div = interrupt > COM_ALL_IRQ;
-    unsigned char reg = COM_I_EN, mask = COM_I_EN_INTERRUPT_EN, value = interrupt & 0xff;
-    if (div) {
-        reg = DIV_I_EN;
-        mask = DIV_I_EN_INTERRUPT_EN;
-        value = (interrupt >> 8) & 0xff;
-    }
-    configureRegisterBits(reg, mask, value);
+    setRegisterBits(MFR522_INT_TO_EN_REG(interrupt), MFR522_INT_TO_EN_MASK(interrupt));
+}
+
+void RadioFrequencyIdentificationMFRC522::disableInterrupt(Interrupt interrupt) {
+    clearRegisterBits(MFR522_INT_TO_EN_REG(interrupt), MFR522_INT_TO_EN_MASK(interrupt));
 }
 
 void RadioFrequencyIdentificationMFRC522::clearInterrupt(Interrupt interrupt) {
-    bool div = interrupt > COM_ALL_IRQ;
-    unsigned char reg = COM_IRQ, mask = COM_IRQ_ALL_IRQ, value = interrupt & 0xff;
-    if (div) {
-        reg = DIV_IRQ;
-        mask = DIV_IRQ_ALL_IRQ;
-        value = (interrupt >> 8) & 0xff;
-    }
-    configureRegisterBits(reg, mask, value);
+
+    // 0x7f: first bit 0 indicates that the marked bits in the register are cleared
+    configureRegisterBits(MFR522_INT_TO_IRQ_REG(interrupt),
+            (MFR522_INT_TO_IRQ_MASK(interrupt)) | 0x80, 0x7f);
 }
 
 void RadioFrequencyIdentificationMFRC522::flushQueue() {
