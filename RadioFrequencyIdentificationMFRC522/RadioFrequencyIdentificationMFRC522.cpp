@@ -58,6 +58,22 @@ int RadioFrequencyIdentificationMFRC522::readRegisterBlock(unsigned char reg,
     return device->readRegisterBlock(((reg << 1) & 0x7e) | 0x80, buf, len);
 }
 
+int RadioFrequencyIdentificationMFRC522::readRegisterBlock(unsigned char reg,
+        unsigned char *buf, unsigned char len, unsigned char rxAlign) {
+    int blockSize = readRegisterBlock(reg, buf, len);
+    if (blockSize > 0 && rxAlign > 0) {
+        rxAlign &= 0x07;
+        unsigned char mask = 0;
+        for (unsigned char i = rxAlign; i <= 7; i++) {
+            mask |= (1 << i);
+        }
+
+        // Only bit positions rxAlign..7 in buf[0] are updated.
+        buf[0] = (buf[0] & ~mask) | (buf[0] & mask);
+    }
+    return blockSize;
+}
+
 unsigned char RadioFrequencyIdentificationMFRC522::writeRegisterBlock(unsigned char reg,
         unsigned char *buf, unsigned char len) {
 
@@ -139,11 +155,21 @@ int RadioFrequencyIdentificationMFRC522::generateRandomId(unsigned char buf[10])
     return readRegisterBlock(FIFO_DATA, buf, 10);
 }
 
+int RadioFrequencyIdentificationMFRC522::tranceiveData(unsigned char *output,
+        unsigned char *input, unsigned char outputLen, bool checkCRC) {
+    return communicate(TRANSCEIVE, output, input, outputLen, checkCRC);
+}
+
 int RadioFrequencyIdentificationMFRC522::communicate(Command command, unsigned char *output,
         unsigned char *input, unsigned char outputLen, bool checkCRC) {
 
     int len = 0;
     COM_IRQbits irq;
+    BIT_FRAMINGbits frame;
+    ERRORbits error;
+    CONTROLbits control;
+
+    lastError = NO_ERROR;
 
     // Stop any active command.
     sendCommand(IDLE);
@@ -178,11 +204,11 @@ int RadioFrequencyIdentificationMFRC522::communicate(Command command, unsigned c
             lastError = TIMEOUT_ERROR;
             return -1;
         }
+
     } while (!irq.IDLE_IRQ && !irq.RX_IRQ);
 
     // Stop now if any errors except collisions were detected.
     // ErrorReg[7..0] bits are: WrErr TempErr reserved BufferOvfl CollErr CRCErr ParityErr ProtocolErr
-    ERRORbits error;
     error.value = readRegister(ERROR);
     if (error.BUFFER_OVFL || error.PARITY_ERR || error.PROTOCOL_ERR || error.COLL_ERR) {
         lastError = COMMUNICATION_ERROR;
@@ -192,27 +218,43 @@ int RadioFrequencyIdentificationMFRC522::communicate(Command command, unsigned c
     // If the caller wants data back, get it from the MFRC522.
     if (input != NULL) {
 
-        // Number of bytes in the FIFO
-        int inpulLen = readRegister(FIFO_LEVEL);
-
         // Get received data from FIFO
-        len = readRegisterBlock(FIFO_DATA, input, inpulLen);
+        len = readRegisterBlock(FIFO_DATA, input, readRegister(FIFO_LEVEL));
 
         // Perform CRC_A validation if requested.
         if (len > 0 && checkCRC) {
 
-            // Verify CRC_A - do our own calculation and store the control in controlBuffer.
-            unsigned int expectedCRC = calculateCRC(input, inpulLen - 2);
-            unsigned int returnedCRC = input[inpulLen - 1];
-            returnedCRC <<= 8;
-            returnedCRC |= input[inpulLen - 2] & 0xff;
-            if (expectedCRC != returnedCRC) {
+            control.value = readRegister(CONTROL);
+
+            // In this case a MIFARE Classic NAK is not OK.
+            if (len == 1 && control.RX_LAST_BITS == 4) {
+                lastError = MIFARE_NACK;
+                return -1;
+            }
+
+            // We need at least the CRC_A value and all 8 bits of the last byte must be received.
+            // NOTE: (unsigned char) len is fine here, len > 0 and is less than FIFO size: 64
+            // NOTE: control.RX_LAST_BITS = 0 means 8 bits.
+            if (len < 2 || control.RX_LAST_BITS != 0
+                    || !hasValisCRC(input, (unsigned char) len)) {
                 lastError = CRC_ERROR;
                 return -1;
             }
         }
     }
     return len;
+}
+
+bool RadioFrequencyIdentificationMFRC522::hasValisCRC(unsigned char *buf,
+        unsigned char len) {
+    unsigned int expectedCRC, returnedCRC;
+
+    // Verify CRC_A - do our own calculation and store the control in controlBuffer.
+    expectedCRC = calculateCRC(buf, len - 2);
+    returnedCRC = buf[len - 1];
+    returnedCRC <<= 8;
+    returnedCRC |= buf[len - 2];
+    return expectedCRC == returnedCRC;
 }
 
 unsigned int RadioFrequencyIdentificationMFRC522::calculateCRC(unsigned char *buff,
@@ -292,6 +334,49 @@ bool RadioFrequencyIdentificationMFRC522::performSelfTest() {
         }
     }
     return true;
+}
+
+void RadioFrequencyIdentificationMFRC522::setBitFraming(unsigned char rxAlign,
+        unsigned char txLastBits) {
+    BIT_FRAMINGbits f;
+    f.value = readRegister(BIT_FRAMING);
+    f.RX_ALIGN = rxAlign;
+    f.TX_LAST_BITS = txLastBits;
+    writeRegister(BIT_FRAMING, f.value);
+}
+
+bool RadioFrequencyIdentificationMFRC522::sendRequestTypeA() {
+    unsigned char output = MIFARE_REQUEST;
+    setBitFraming(0, 0x07);
+
+    //  25ms before timeout, auto start timer at the end of the transmission
+    configureTimer(0xa9, 0x03e8, true, false);
+    tranceiveData(&output, NULL, 1);
+    return lastError == NO_ERROR;
+}
+
+bool RadioFrequencyIdentificationMFRC522::sendWakeUp() {
+    unsigned char output = MIFARE_WAKE_UP;
+    setBitFraming(0, 0x07);
+
+    //  25ms before timeout, auto start timer at the end of the transmission
+    configureTimer(0xa9, 0x03e8, true, false);
+    tranceiveData(&output, NULL, 1);
+    return lastError == NO_ERROR;
+}
+
+bool RadioFrequencyIdentificationMFRC522::sendHalt() {
+    unsigned char buf[4] = { MIFARE_HLT_A, 0, 0, 0 };
+
+    // Calculate CRC_A
+    unsigned int crc = calculateCRC(buf, 2);
+    buf[2] = (crc >> 8) & 0xff;
+    buf[3] = crc & 0xff;
+
+    // If the PICC responds with any modulation during a period of 1 ms after the end of the frame containing the
+    // HLTA command, this response shall be interpreted as 'not acknowledge'.
+    tranceiveData(buf, NULL, 4);
+    return lastError != NO_ERROR;
 }
 
 RadioFrequencyIdentificationMFRC522::Version RadioFrequencyIdentificationMFRC522::getVersion() {

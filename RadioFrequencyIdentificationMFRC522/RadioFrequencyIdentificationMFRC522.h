@@ -218,6 +218,46 @@ public:
         TEST_ADC = 0x3b
     };
 
+    // All MIFARE Classic commands use the MIFARE Crypto1 and require an authentication.
+    enum MIFARECommand {
+
+        // REQuest command, Type A. Invites PICCs in state IDLE to go to READY and prepare for anticollision or selection. 7 bit frame.
+        MIFARE_REQUEST = 0x26,
+
+        // Wake-UP command, Type A. Invites PICCs in state IDLE and HALT to go to READY(*) and prepare for anticollision or selection. 7 bit frame.
+        MIFARE_WAKE_UP = 0x52,
+
+        // Anti collision/Select, Cascade Level 1
+        MIFARE_ANTI_COLLISION_CL1 = 0x93,
+
+        // HaLT command, Type A. Instructs an ACTIVE PICC to go to state HALT.
+        MIFARE_HLT_A = 0x50,
+
+        // Perform authentication with Key A.
+        MIFARE_AUTH_KEY_A = 0x60,
+
+        // Perform authentication with Key B.
+        MIFARE_AUTH_KEY_B = 0x61,
+
+        // Reads one 16 byte block from the authenticated sector of the PICC. Also used for MIFARE Ultralight.
+        MIFARE_READ = 0x30,
+
+        // Writes one 16 byte block to the authenticated sector of the PICC. Called "COMPATIBILITY WRITE" for MIFARE Ultralight.
+        MIFARE_WRITE = 0xa0,
+
+        // Decrements the contents of a block and stores the result in the internal data register.
+        MIFARE_DECREMENT = 0xc0,
+
+        // Increments the contents of a block and stores the result in the internal data register.
+        MIFARE_INCREMENT = 0xc1,
+
+        // Reads the contents of a block into the internal data register.
+        MIFARE_RESTORE = 0xc2,
+
+        // Writes the contents of the internal data register to a block.
+        MIFARE_TRANSFER = 0xb0,
+    };
+
     enum Command {
 
         // no action, cancels current command execution
@@ -256,7 +296,8 @@ public:
         GENERAL_ERROR = 0x01,
         TIMEOUT_ERROR = 0x02,
         COMMUNICATION_ERROR = 0x03,
-        CRC_ERROR = 0x04
+        CRC_ERROR = 0x04,
+        MIFARE_NACK = 0x05
     };
 
     enum Mask {
@@ -1329,7 +1370,7 @@ public:
      *                          TimerIRq bit is set to logic 1
      */
     void configureTimer(unsigned int prescaler, unsigned int reload, bool autoStart,
-            bool autoRestart);
+    bool autoRestart);
 
     void startTimer();
 
@@ -1352,6 +1393,23 @@ public:
 
     int communicate(Command command, unsigned char *output, unsigned char *input,
             unsigned char outputLen, bool checkCRC);
+
+    inline int communicate(Command command, unsigned char *output, unsigned char *input,
+            unsigned char outputLen) {
+        return communicate(command, output, input, outputLen, false);
+    }
+
+    /**
+     * @param   output          Pointer to the data to transfer to the FIFO.
+     * @param   input           NULL or pointer to buffer if data should be read back after executing the command. (max 64 bytes).
+     * @param   outputLen       Size of the data to transfer to the FIFO.
+     */
+    int tranceiveData(unsigned char *output, unsigned char *input, unsigned char outputLen,
+            bool checkCRC);
+
+    inline int tranceiveData(unsigned char *output, unsigned char *input, unsigned char outputLen) {
+        return tranceiveData(output, input, outputLen, false);
+    }
 
     unsigned int calculateCRC(unsigned char *buff, unsigned char len);
 
@@ -1394,6 +1452,17 @@ public:
      */
     bool performSelfTest();
 
+    void setBitFraming(unsigned char rxAlign, unsigned char txLastBits);
+
+    /**
+     * Checks if there is a card near.
+     */
+    bool sendRequestTypeA();
+
+    bool sendWakeUp();
+
+    bool sendHalt();
+
     /**
      * Reads values from the device, starting by the reg register.
      *
@@ -1413,6 +1482,8 @@ public:
      */
     int readRegisterBlock(unsigned char reg, unsigned char *buf, unsigned char len);
 
+    int readRegisterBlock(unsigned char reg, unsigned char *buf, unsigned char len, unsigned char rxAlign);
+
     /**
      * Writes a sequence of values to a sequence of registers, starting by the reg address.
      *
@@ -1423,6 +1494,11 @@ public:
      */
     unsigned char writeRegisterBlock(unsigned char reg, unsigned char *buf,
             unsigned char len);
+
+
+private:
+
+    bool hasValisCRC(unsigned char *buf, unsigned char len);
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_MFRC522_H__
