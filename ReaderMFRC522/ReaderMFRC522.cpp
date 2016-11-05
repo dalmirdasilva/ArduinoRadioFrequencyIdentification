@@ -260,6 +260,19 @@ unsigned int ReaderMFRC522::calculateCrc(unsigned char *buf, unsigned char len) 
     return dst;
 }
 
+int ReaderMFRC522::anticollision() {
+
+    COLLbits cb;
+
+    do {
+
+    } while(cb.COLL_POS);
+}
+
+int ReaderMFRC522::select() {
+
+}
+
 void ReaderMFRC522::calculateCrc(unsigned char *buf, unsigned char len, unsigned char *dst) {
 
     // Stop any active command.

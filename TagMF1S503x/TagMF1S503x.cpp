@@ -2,7 +2,7 @@
 #include <Reader.h>
 
 TagMF1S503x::TagMF1S503x(Reader *reader)
-        : reader(reader) {
+        : Tag(reader) {
 }
 
 bool TagMF1S503x::detect(unsigned char command) {
@@ -23,12 +23,16 @@ bool TagMF1S503x::wakeUp() {
     return detect(WAKE_UP);
 }
 
-bool TagMF1S503x::antiCollision() {
-    return true;
+bool TagMF1S503x::activate() {
+    return wakeUp() && hasAnticollisionSupport() && anticollision() && select();
+}
+
+bool TagMF1S503x::anticollision() {
+    return reader->anticollision() >= 0;
 }
 
 bool TagMF1S503x::select() {
-    return true;
+    return reader->select() >= 0;
 }
 
 bool TagMF1S503x::halt() {

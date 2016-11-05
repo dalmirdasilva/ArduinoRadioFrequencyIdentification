@@ -62,6 +62,10 @@ public:
 
     virtual int authenticate(unsigned char *send, unsigned char sendLen) = 0;
 
+    virtual int anticollision() = 0;
+
+    virtual int select() = 0;
+
     virtual unsigned int calculateCrc(unsigned char *buf, unsigned char len) = 0;
 
     virtual void calculateCrc(unsigned char *buf, unsigned char len, unsigned char *dst) = 0;

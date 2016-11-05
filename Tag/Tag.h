@@ -7,6 +7,8 @@
 #ifndef __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_H__
 #define __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_H__ 1
 
+#include <Reader.h>
+
 class Tag {
 
 public:
@@ -33,7 +35,7 @@ public:
         unsigned char sak;
     };
 
-    Tag();
+    Tag(Reader *reader);
 
     virtual ~Tag();
 
@@ -46,7 +48,7 @@ public:
 
     virtual bool wakeUp() = 0;
     
-    virtual bool antiCollision() = 0;
+    virtual bool anticollision() = 0;
 
     virtual bool select() = 0;
 
@@ -83,6 +85,8 @@ public:
     TagType getTagType();
 
 protected:
+
+    Reader *reader;
 
     TagType tagType;
 

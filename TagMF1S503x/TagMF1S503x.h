@@ -15,8 +15,6 @@
 
 class TagMF1S503x: public Tag {
 
-    Reader *reader;
-
 public:
 
     enum Permission {
@@ -41,6 +39,15 @@ public:
 
         // Anti collision/Select, Cascade Level 1
         ANTI_COLLISION_CL1 = 0x93,
+
+        // Anti collision/Select, Cascade Level 1
+        SEL_CL1 = 0x93,
+
+        // Anti collision/Select, Cascade Level 2
+        SEL_CL2 = 0x95,
+
+        // Anti collision/Select, Cascade Level 3
+        SEL_CL3 = 0x97,
 
         // HaLT command, Type A. Instructs an ACTIVE PICC to go to state HALT.
         HLT_A = 0x50,
@@ -83,7 +90,9 @@ public:
 
     bool wakeUp();
 
-    bool antiCollision();
+    bool activate();
+
+    bool anticollision();
 
     bool select();
 

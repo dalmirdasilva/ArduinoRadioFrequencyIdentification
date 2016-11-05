@@ -6,8 +6,8 @@
 
 #include "Tag.h"
 
-Tag::Tag()
-        : tagType(UNDEFINED), uid( { 0 }), supportsAnticollision(false) {
+Tag::Tag(Reader *reader)
+        : reader(reader), tagType(UNDEFINED), uid( { 0 }), supportsAnticollision(false) {
 }
 
 Tag::~Tag() {

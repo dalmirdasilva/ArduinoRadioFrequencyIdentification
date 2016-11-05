@@ -1327,6 +1327,10 @@ public:
 
     int authenticate(unsigned char *send, unsigned char sendLen);
 
+    int anticollision();
+
+    int select();
+
     /**
      * Calculate CRC of the buffer.
      *
