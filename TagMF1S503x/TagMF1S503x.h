@@ -10,8 +10,9 @@
 #include <Reader.h>
 #include <Tag.h>
 
-#define TAG_MF1S503X_KEY_SIZE               0x06
-#define MF1S503X_ATQA_ANTICOLLISION_BIT     0x04
+#define TAG_MF1S503X_KEY_SIZE                   0x06
+#define TAG_MF1S503X_ATQA_ANTICOLLISION_BIT     0x04
+#define TAG_MF1S503X_SAK_BIT                    0x20
 
 class TagMF1S503x: public Tag {
 
@@ -36,9 +37,6 @@ public:
 
         // Wake-UP command, Type A. Invites PICCs in state IDLE and HALT to go to READY(*) and prepare for anticollision or selection. 7 bit frame.
         WAKE_UP = 0x52,
-
-        // Anti collision/Select, Cascade Level 1
-        ANTI_COLLISION_CL1 = 0x93,
 
         // Anti collision/Select, Cascade Level 1
         SEL_CL1 = 0x93,
@@ -92,17 +90,19 @@ public:
 
     bool activate();
 
-    bool anticollision();
-
     bool select();
 
     bool halt();
 
-    bool authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key, Uid *uid);
+    bool authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key);
 
     bool readBlock(unsigned char blockAddress, unsigned char *buf);
 
     bool writeBlock(unsigned char blockAddress, unsigned char *buf);
+
+    int readByte(unsigned char blockAddress, unsigned char pos);
+
+    bool writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value);
 
     bool decrement();
 
@@ -121,6 +121,10 @@ public:
     bool setBlockPermission(unsigned char blockAddress, unsigned char permission);
 
     bool writeKey(unsigned char blockAddress, unsigned char blockType, unsigned char *key);
+
+private:
+
+    unsigned char computeNvb(unsigned char collisionPos);
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1S503X_H__

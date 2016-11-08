@@ -162,7 +162,7 @@ int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsig
     lastError = NO_ERROR;
 
     // 25ms before timeout, auto start timer at the end of the transmission
-    configureTimer(0x66, 0xffff, true, false);
+    configureTimer(0xf9, 0x03e8, true, false);
 
     // Stop any active command.
     sendCommand(IDLE);
@@ -197,13 +197,18 @@ int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsig
             lastError = TIMEOUT_ERROR;
             return -1;
         }
-
     } while (!irq.IDLE_IRQ && !irq.RX_IRQ);
 
     // Stop now if any errors except collisions were detected.
     // ErrorReg[7..0] bits are: WrErr TempErr reserved BufferOvfl CollErr CRCErr ParityErr ProtocolErr
     error.value = readRegister(ERROR);
-    if (error.BUFFER_OVFL || error.PARITY_ERR || error.PROTOCOL_ERR || error.COLL_ERR) {
+
+    if (error.COLL_ERR) {
+        lastError = COLLISION_ERROR;
+        return -1;
+    }
+
+    if (error.BUFFER_OVFL || error.PARITY_ERR || error.PROTOCOL_ERR) {
         lastError = COMMUNICATION_ERROR;
         return -1;
     }
@@ -214,24 +219,20 @@ int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsig
         // Get received data from FIFO
         len = readRegisterBlock(FIFO_DATA, receive, readRegister(FIFO_LEVEL));
 
-        // Perform CRC_A validation if requested.
-        if (len > 0 && checkCrc) {
+        control.value = readRegister(CONTROL);
 
-            control.value = readRegister(CONTROL);
+        // In this case a MIFARE Classic NAK is not OK.
+        if (len == 1 && control.RX_LAST_BITS == 4) {
+            lastError = NACK;
+            return -1;
+        }
 
-            // In this case a MIFARE Classic NAK is not OK.
-            if (len == 1 && control.RX_LAST_BITS == 4) {
-                lastError = NACK;
-                return -1;
-            }
-
-            // We need at least the CRC_A value and all 8 bits of the last byte must be received.
-            // NOTE: (unsigned char) len is fine here, len > 0 and is less than FIFO size: 64
-            // NOTE: control.RX_LAST_BITS = 0 means 8 bits.
-            if (len < 2 || control.RX_LAST_BITS != 0 || !hasValidCrc(receive, (unsigned char) len)) {
-                lastError = CRC_ERROR;
-                return -1;
-            }
+        // We need at least the CRC_A value and all 8 bits of the last byte must be received.
+        // NOTE: casting (unsigned char) len is fine here, len > 0 and is less than FIFO size: 64
+        // NOTE: control.RX_LAST_BITS = 0 means 8 bits.
+        if (checkCrc && (len < 2 || control.RX_LAST_BITS != 0 || !hasValidCrc(receive, (unsigned char) len))) {
+            lastError = CRC_ERROR;
+            return -1;
         }
     }
     return len;
@@ -245,32 +246,23 @@ int ReaderMFRC522::authenticate(unsigned char *send, unsigned char sendLen) {
     return communicate(MF_AUTHENT, send, NULL, sendLen);
 }
 
+void ReaderMFRC522::turnOffEncryption() {
+    clearRegisterBits(STATUS2, STATUS2_MF_CRYPTO1_ON);
+}
+
 bool ReaderMFRC522::hasValidCrc(unsigned char *buf, unsigned char len) {
     if (len <= 2) {
         return true;
     }
     unsigned char crc[2];
     calculateCrc(buf, len - 2, crc);
-    return (buf[len - 1] == crc[0]) && (buf[len - 2] == crc[1]);
+    return (buf[len - 2] == crc[0]) && (buf[len - 1] == crc[1]);
 }
 
 unsigned int ReaderMFRC522::calculateCrc(unsigned char *buf, unsigned char len) {
     unsigned int dst;
     calculateCrc(buf, len, (unsigned char *) &dst);
     return dst;
-}
-
-int ReaderMFRC522::anticollision() {
-
-    COLLbits cb;
-
-    do {
-
-    } while(cb.COLL_POS);
-}
-
-int ReaderMFRC522::select() {
-
 }
 
 void ReaderMFRC522::calculateCrc(unsigned char *buf, unsigned char len, unsigned char *dst) {
@@ -356,6 +348,16 @@ void ReaderMFRC522::setBitFraming(unsigned char rxAlign, unsigned char txLastBit
     f.RX_ALIGN = rxAlign;
     f.TX_LAST_BITS = txLastBits;
     writeRegister(BIT_FRAMING, f.value);
+}
+
+unsigned char ReaderMFRC522::getCollisionPosition() {
+    COLLbits coll;
+    coll.value = readRegister(COLL);
+    return coll.COLL_POS > 0 ? coll.COLL_POS : 32;
+}
+
+void ReaderMFRC522::setuptForAnticollision() {
+    clearRegisterBits(COLL, COLL_VALUES_AFTER_COLL);
 }
 
 ReaderMFRC522::Version ReaderMFRC522::getVersion() {

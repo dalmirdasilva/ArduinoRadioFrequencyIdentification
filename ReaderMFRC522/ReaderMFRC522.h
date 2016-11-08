@@ -268,7 +268,9 @@ public:
         FIFO_LEVEL_FIFO_LEVEL = 0x7f,
         WATER_LEVEL_WATER_LEVEL = 0x3f,
         BIT_FRAMING_START_SEND = 0x80,
-        AUTO_TEST_ENABLE = 0x09
+        AUTO_TEST_ENABLE = 0x09,
+        COLL_VALUES_AFTER_COLL = 0x80,
+        STATUS2_MF_CRYPTO1_ON = 0x08
     };
 
     enum Interrupt
@@ -1327,10 +1329,6 @@ public:
 
     int authenticate(unsigned char *send, unsigned char sendLen);
 
-    int anticollision();
-
-    int select();
-
     /**
      * Calculate CRC of the buffer.
      *
@@ -1406,6 +1404,10 @@ public:
      */
     void setBitFraming(unsigned char rxAlign, unsigned char txLastBits);
 
+    unsigned char getCollisionPosition();
+
+    void setuptForAnticollision();
+
     /**
      * Reads values from the device, starting by the reg register.
      *
@@ -1447,6 +1449,8 @@ private:
      *
      */
     bool hasValidCrc(unsigned char *buf, unsigned char len);
+
+    void turnOffEncryption();
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_READER_MFRC522_H__

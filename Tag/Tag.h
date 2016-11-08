@@ -13,6 +13,14 @@ class Tag {
 
 public:
 
+    enum State {
+        POWER_OFF = 0x00,
+        IDLE = 0x01,
+        READY = 0x02,
+        ACTIVE = 0x03,
+        HALT = 0x04
+    };
+
     enum TagType {
         UNDEFINED = 0X00,
         MIFARE_MINI = 0X01,
@@ -48,17 +56,19 @@ public:
 
     virtual bool wakeUp() = 0;
     
-    virtual bool anticollision() = 0;
-
     virtual bool select() = 0;
 
     virtual bool halt() = 0;
 
-    virtual bool authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key, Uid *uid) = 0;
+    virtual bool authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key) = 0;
 
     virtual bool readBlock(unsigned char blockAddress, unsigned char *buf) = 0;
 
     virtual bool writeBlock(unsigned char blockAddress, unsigned char *buf) = 0;
+
+    virtual int readByte(unsigned char blockAddress, unsigned char pos) = 0;
+
+    virtual bool writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value) = 0;
 
     virtual bool decrement() = 0;
 
@@ -84,6 +94,10 @@ public:
 
     TagType getTagType();
 
+    void setState(State state);
+
+    State getState();
+
 protected:
 
     Reader *reader;
@@ -93,6 +107,8 @@ protected:
     Uid uid;
 
     bool supportsAnticollision;
+
+    State state;
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_H__

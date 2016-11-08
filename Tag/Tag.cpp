@@ -7,7 +7,7 @@
 #include "Tag.h"
 
 Tag::Tag(Reader *reader)
-        : reader(reader), tagType(UNDEFINED), uid( { 0 }), supportsAnticollision(false) {
+        : reader(reader), tagType(UNDEFINED), uid( { 0 }), supportsAnticollision(false), state(POWER_OFF) {
 }
 
 Tag::~Tag() {
@@ -23,4 +23,12 @@ bool Tag::hasAnticollisionSupport() {
 
 Tag::TagType Tag::getTagType() {
     return tagType;
+}
+
+void Tag::setState(Tag::State state) {
+    this->state = state;
+}
+
+Tag::State Tag::getState() {
+    return state;
 }

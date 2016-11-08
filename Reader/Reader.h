@@ -19,7 +19,8 @@ public:
         TIMEOUT_ERROR = 0x02,
         COMMUNICATION_ERROR = 0x03,
         CRC_ERROR = 0x04,
-        NACK = 0x05
+        NACK = 0x05,
+        COLLISION_ERROR = 0x06
     };
 
     Reader();
@@ -62,9 +63,7 @@ public:
 
     virtual int authenticate(unsigned char *send, unsigned char sendLen) = 0;
 
-    virtual int anticollision() = 0;
-
-    virtual int select() = 0;
+    virtual void turnOffEncryption() = 0;
 
     virtual unsigned int calculateCrc(unsigned char *buf, unsigned char len) = 0;
 
@@ -77,6 +76,10 @@ public:
     virtual bool performSelfTest() = 0;
 
     virtual void setBitFraming(unsigned char rxAlign, unsigned char txLastBits) = 0;
+
+    virtual unsigned char getCollisionPosition() = 0;
+
+    virtual void setuptForAnticollision() = 0;
 
     unsigned char getLastError();
 
