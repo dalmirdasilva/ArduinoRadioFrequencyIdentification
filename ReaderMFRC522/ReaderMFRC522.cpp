@@ -213,19 +213,19 @@ int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsig
         return -1;
     }
 
+    control.value = readRegister(CONTROL);
+
+    // In this case a MIFARE Classic NAK is not OK.
+    if (len == 1 && control.RX_LAST_BITS == 4) {
+        lastError = NACK;
+        return -1;
+    }
+
     // If the caller wants data back, get it from the MFRC522.
     if (receive != NULL) {
 
         // Get received data from FIFO
         len = readRegisterBlock(FIFO_DATA, receive, readRegister(FIFO_LEVEL));
-
-        control.value = readRegister(CONTROL);
-
-        // In this case a MIFARE Classic NAK is not OK.
-        if (len == 1 && control.RX_LAST_BITS == 4) {
-            lastError = NACK;
-            return -1;
-        }
 
         // We need at least the CRC_A value and all 8 bits of the last byte must be received.
         // NOTE: casting (unsigned char) len is fine here, len > 0 and is less than FIFO size: 64

@@ -126,9 +126,9 @@ bool TagMF1S503x::authenticate(unsigned char keyType, unsigned char blockAddress
 
 bool TagMF1S503x::readBlock(unsigned char blockAddress, unsigned char *buf) {
 
-    if (key != NULL) {
-        Serial.print("auth: ");
-        Serial.println(authenticate(keyType, blockAddress, key));
+    if (key != NULL && !authenticate(keyType, blockAddress, key)) {
+        Serial.print("auth: false");
+        return false;
     }
 
     // Build command buffer
@@ -146,10 +146,11 @@ bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
 
     unsigned char cmd[4];
 
-    if (key != NULL) {
-        Serial.print("auth: ");
-        Serial.println(authenticate(keyType, blockAddress, key));
+    if (key != NULL && !authenticate(keyType, blockAddress, key)) {
+        Serial.print("auth: false");
+        return false;
     }
+
 
     // Build command buffer
     cmd[0] = WRITE;
@@ -163,7 +164,7 @@ bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
 
     // Check if ack was received.
     if (reader->getLastError() == Reader::NACK) {
-        Serial.println("FIRST");
+        Serial.println("got NACK step 1");
         return false;
     }
 
@@ -172,6 +173,12 @@ bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
 
     // Transmit the buffer and receive the response, validate CRC_A.
     reader->tranceive(buf, buf, 18);
+
+    // Check if ack was received.
+    if (reader->getLastError() == Reader::NACK) {
+        Serial.println("got NACK step 2");
+        return false;
+    }
 
     return reader->getLastError() != Reader::NACK;
 }

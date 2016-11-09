@@ -22,21 +22,23 @@ void loop() {
     unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
     if (tag.activate()) {
-        Serial.println(" Card detected: ");
+        Serial.println("Card detected: ");
         Tag::Uid uid = tag.getUid();
         for (int i = 0; i < uid.size; i++) {
             Serial.println(uid.uid[i], HEX);
         }
-        if (tag.authenticate(TagMF1S503x::KEY_A, 1, keyA)) {
+        if (tag.authenticate(TagMF1S503x::KEY_A, 5, keyA)) {
             Serial.println("Successfully authenticated.");
-            if (tag.writeBlock(1, buf)) {
+            if (tag.writeBlock(5, buf)) {
                 Serial.print("data wrote successfully.");
             } else {
-                Serial.print("error when reading: ");
+                Serial.print("error when writing: ");
                 Serial.println(reader.getLastError());
             }
             Serial.println();
             Serial.println(tag.halt());
+
+            delay(2000);
         }
     } else {
         Serial.println(reader.getLastError());
