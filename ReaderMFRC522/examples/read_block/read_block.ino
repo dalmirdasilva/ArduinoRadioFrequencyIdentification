@@ -18,7 +18,7 @@ void setup() {
 
 void loop() {
 
-    unsigned char readBuf[16] = { 0 };
+    unsigned char buf[18] = { 0 };
     unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
     if (tag.activate()) {
@@ -29,10 +29,10 @@ void loop() {
         }
         if (tag.authenticate(TagMF1S503x::KEY_A, 3, keyA)) {
             Serial.println("Successfully authenticated.");
-            if (tag.readBlock(3, readBuf)) {
+            if (tag.readBlock(3, buf)) {
                 Serial.println("Successfully read.");
                 for (int i = 0; i < 16; i++) {
-                    Serial.print(readBuf[i], HEX);
+                    Serial.print(buf[i], HEX);
                     Serial.print(" ");
                 }
             }

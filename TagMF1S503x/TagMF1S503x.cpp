@@ -2,7 +2,7 @@
 #include <Reader.h>
 
 TagMF1S503x::TagMF1S503x(Reader *reader)
-        : Tag(reader) {
+        : Tag(reader), keyType(KEY_A), key(NULL) {
 }
 
 bool TagMF1S503x::detect(unsigned char command) {
@@ -99,9 +99,10 @@ bool TagMF1S503x::halt() {
     // Calculate CRC_A
     reader->calculateCrc(buf, 2, &buf[2]);
 
+    reader->tranceive(buf, NULL, 4);
+
     // If the PICC responds with any modulation during a period of 1 ms after the end of the frame containing the
     // HLTA command, this response shall be interpreted as 'not acknowledge'.
-    reader->tranceive(buf, NULL, 4);
     return reader->getLastError() == Reader::TIMEOUT_ERROR;
 }
 
@@ -119,11 +120,16 @@ bool TagMF1S503x::authenticate(unsigned char keyType, unsigned char blockAddress
         buf[8 + i] = uid.uid[i];
     }
 
-    // Start the authentication.
-    return reader->authenticate(buf, 12) >= 0;
+    // Perform the authentication.
+    return reader->authenticate(buf) >= 0;
 }
 
 bool TagMF1S503x::readBlock(unsigned char blockAddress, unsigned char *buf) {
+
+    if (key != NULL) {
+        Serial.print("auth: ");
+        Serial.println(authenticate(keyType, blockAddress, key));
+    }
 
     // Build command buffer
     buf[0] = READ;
@@ -139,6 +145,11 @@ bool TagMF1S503x::readBlock(unsigned char blockAddress, unsigned char *buf) {
 bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
 
     unsigned char cmd[4];
+
+    if (key != NULL) {
+        Serial.print("auth: ");
+        Serial.println(authenticate(keyType, blockAddress, key));
+    }
 
     // Build command buffer
     cmd[0] = WRITE;
@@ -176,22 +187,10 @@ int TagMF1S503x::readByte(unsigned char blockAddress, unsigned char pos) {
 bool TagMF1S503x::writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value) {
     unsigned char buf[18];
     if (!readBlock(blockAddress, buf)) {
-        Serial.println("cannot read");
-        Serial.println(reader->getLastError());
         return false;
     }
     buf[pos] = value;
-
-    unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
-    authenticate(TagMF1S503x::KEY_A, 1, keyA);
-    bool w = writeBlock(blockAddress, buf);
-    if (!w) {
-        Serial.println("cannot write");
-        Serial.println(reader->getLastError());
-        return false;
-    }
-    return w;
+    return writeBlock(blockAddress, buf);
 }
 
 bool TagMF1S503x::decrement() {
@@ -229,6 +228,11 @@ bool TagMF1S503x::setBlockPermission(unsigned char blockAddress, unsigned char p
 
 bool TagMF1S503x::writeKey(unsigned char blockAddress, unsigned char blockType, unsigned char *key) {
     return true;
+}
+
+void TagMF1S503x::setupAuthenticationKey(KeyType keyType, unsigned char *key) {
+    this->keyType = keyType;
+    this->key = key;
 }
 
 unsigned char TagMF1S503x::computeNvb(unsigned char collisionPos) {

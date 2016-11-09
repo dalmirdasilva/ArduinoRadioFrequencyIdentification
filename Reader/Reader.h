@@ -61,7 +61,7 @@ public:
 
     virtual int tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen) = 0;
 
-    virtual int authenticate(unsigned char *send, unsigned char sendLen) = 0;
+    virtual int authenticate(unsigned char *send) = 0;
 
     virtual void turnOffEncryption() = 0;
 

@@ -102,6 +102,14 @@ public:
 
     int readByte(unsigned char blockAddress, unsigned char pos);
 
+    /**
+     * It just work if you call setupAuthenticationKey before it.
+     * As it uses read and write operation, and the internal logic of the MF1S503x
+     * ensures that the commands are executed only after a successful authentication.
+     * Therefore, it is not possible to execute those 2 operations without re-authenticate.
+     * As this method is intended to do they both, it requires that the read and write
+     * operations are auto-authenticated.
+     */
     bool writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value);
 
     bool decrement();
@@ -122,7 +130,13 @@ public:
 
     bool writeKey(unsigned char blockAddress, unsigned char blockType, unsigned char *key);
 
+    void setupAuthenticationKey(KeyType keyType, unsigned char *key);
+
 private:
+
+    KeyType keyType;
+
+    unsigned char *key;
 
     unsigned char computeNvb(unsigned char collisionPos);
 };

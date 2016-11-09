@@ -210,34 +210,34 @@ public:
 
     enum Command {
 
-        // no action, cancels current command execution
+        // No action, cancels current command execution
         IDLE = 0x00,
 
-        // stores 25 bytes into the internal buffer
+        // Stores 25 bytes into the internal buffer
         MEM = 0x01,
 
-        // generates a 10-byte random ID number
+        // Generates a 10-byte random ID number
         GENERATE_RANDOM_ID = 0x02,
 
-        // activates the CRC calculation or performs a self test
+        // Activates the CRC calculation or performs a self test
         CALC_CRC = 0x03,
 
         // Transmit data
         TRANSMIT = 0x04,
 
-        // no command change, can be used to modify the CommandReg register bits without affecting the command, for example, the PowerDown bit
+        // No command change, can be used to modify the CommandReg register bits without affecting the command, for example, the PowerDown bit
         NO_CMD_CHANGE = 0x07,
 
-        // activates the receiver circuits (receive data)
+        // Activates the receiver circuits (receive data)
         RECEIVE = 0x08,
 
-        // transmits data from FIFO buffer to antenna and automatically activates the receiver after transmission (transmit and receive data)
+        // Transmits data from FIFO buffer to antenna and automatically activates the receiver after transmission (transmit and receive data)
         TRANSCEIVE = 0x0c,
 
-        // performs the MIFARE standard authentication as a reader (authentication)
+        // Performs the MIFARE standard authentication as a reader (authentication)
         MF_AUTHENT = 0x0e,
 
-        // resets the MFRC522
+        // Resets the MFRC522
         SOFT_RESET = 0x0F
     };
 
@@ -1242,14 +1242,32 @@ public:
 
     virtual ~ReaderMFRC522();
 
+    /**
+     * Setup the module.
+     */
     void initialize();
 
+    /**
+     * Sends a command to the module.
+     *
+     * @param   command             The command to be executed.
+     */
     inline void sendCommand(unsigned char command);
 
+    /**
+     * Performs a soft reset to the device by sending the SOFT_RESET command.
+     */
     void softReset();
 
+    /**
+     * Enables the antenna by setting the TX_RF_EN bits of the TX_CONTROL register.
+     * .
+     */
     void setAntennaOn();
 
+    /**
+     * Disables the antenna by clearing the TX_RF_EN bits of the TX_CONTROL register.
+     */
     void setAntennaOff();
 
     /**
@@ -1294,22 +1312,81 @@ public:
      */
     void configureTimer(unsigned int prescaler, unsigned int reload, bool autoStart, bool autoRestart);
 
+    /**
+     * Stops immediately the internal timer by writting 1 to the T_START_NOW
+     * bit of the CONTROL register.
+     */
     void startTimer();
 
+    /**
+     * Stops immediately the internal timer by writting 1 to the T_STOP_NOW
+     * bit of the CONTROL register.
+     */
     void stopTimer();
 
+    /**
+     * Enable the interrupt bit at DIV_I_EN or COM_I_EN registers.
+     * If the interrupt param is higher than 0xff it upper byte is used for the mask and the reg is DIV_I_EN
+     * otherwise the low byte is used as mask to set the COM_I_EN register.
+     *
+     * @param   interrupt           The interrupt to be disables.
+     */
     void enableInterrupt(unsigned int interrupt);
 
+    /**
+     * Disable the interrupt bit at DIV_I_EN or COM_I_EN registers.
+     * If the interrupt param is higher than 0xff it upper byte is used for the mask and the reg is DIV_I_EN
+     * otherwise the low byte is used as mask to clear the COM_I_EN register.
+     *
+     * @param   interrupt           The interrupt to be disables.
+     */
     void disableInterrupt(unsigned int interrupt);
 
+    /**
+     * Clear the interrupt bit at DIV_IRQ or COM_IRQ registers.
+     * If the interrupt param is higher than 0xff it upper byte is used for the mask and the reg is DIV_IRQ
+     * otherwise the low byte is used as mask to clear the COM_IRQ register.
+     *
+     * @param   interrupt           The interrupt to be cleared.
+     */
     void clearInterrupt(unsigned int interrupt);
 
+    /**
+     * Immediately clears the internal FIFO buffer's read and write pointer and ErrorReg
+     * register's BufferOvfl bit reading this bit always returns 0
+     */
     void flushQueue();
 
+    /**
+     * Set level for FIFO underflow and overflow warning
+     *
+     * @param   level           The FIFO level.
+     */
     void setWaterLevel(unsigned char level);
 
+    /**
+     * Generates a 10-byte random ID number.
+     *
+     * @param   buf             The 10-byte wide buffer where to place the random number.
+     */
     int generateRandomId(unsigned char *buf);
 
+    /**
+     * Perform a communication with the reader. It puts the content
+     * of the send buffer into the FIFO and execute the command. Then, it reads
+     * the content from the FIFO and place it into the receive buffer.
+     *
+     * @param   command         The command to be executed.
+     * @param   send            Buffer to place into the FIFO before executing the command.
+     * @param   receive         Buffer to receive the FIFO data after the command is executed.
+     *                          NOTE: different commands receive incoming bytes with different lengths, it is your
+     *                          duty to provide the receive buffer big enough to hold the incoming bytes.
+     *                          The FIFO size (64 bytes) is the maximum value for the length of this buffer.
+     *                          When reading blocks of the tag sectors, this buffer needs to be 18 bytes wide, to fit 16 bytes
+     *                          of data plus 2 bytes of the CRC.
+     * @param   sendLen         How many bytes the send buffer has.
+     * @param   checkCrc        Whether or not it is needed to check the incoming bytes CRC.
+     */
     int communicate(unsigned char command, unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc);
 
     inline int communicate(unsigned char command, unsigned char *send, unsigned char *receive, unsigned char sendLen);
@@ -1327,7 +1404,27 @@ public:
 
     inline int tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen);
 
-    int authenticate(unsigned char *send, unsigned char sendLen);
+    /**
+     * Performs the authentication by sending the MF_AUTHENT command to the device.
+     * This command manages MIFARE authentication to enable a secure communication to
+     * any MIFARE Mini, MIFARE 1K and MIFARE 4K card. The following data is written to the
+     * FIFO buffer before the command can be activated:
+     *  - Authentication command code (60h, 61h)
+     *  - Block address
+     *  - Sector key byte 0
+     *  - Sector key byte 1
+     *  - Sector key byte 2
+     *  - Sector key byte 3
+     *  - Sector key byte 4
+     *  - Sector key byte 5
+     *  - Card serial number byte 0
+     *  - Card serial number byte 1
+     *  - Card serial number byte 2
+     *  - Card serial number byte 3
+     *
+     *  @param  send            The buffer containing the above data to be send to the module.
+     */
+    int authenticate(unsigned char *send);
 
     /**
      * Calculate CRC of the buffer.

@@ -34,7 +34,7 @@ void ReaderMFRC522::initialize() {
 }
 
 void ReaderMFRC522::softReset() {
-    writeRegister(COMMAND, SOFT_RESET);
+    sendCommand(SOFT_RESET);
 }
 
 void ReaderMFRC522::setAntennaOn() {
@@ -242,8 +242,8 @@ inline int ReaderMFRC522::communicate(unsigned char command, unsigned char *send
     return communicate(command, send, receive, sendLen, false);
 }
 
-int ReaderMFRC522::authenticate(unsigned char *send, unsigned char sendLen) {
-    return communicate(MF_AUTHENT, send, NULL, sendLen);
+int ReaderMFRC522::authenticate(unsigned char *send) {
+    return communicate(MF_AUTHENT, send, NULL, 12);
 }
 
 void ReaderMFRC522::turnOffEncryption() {
