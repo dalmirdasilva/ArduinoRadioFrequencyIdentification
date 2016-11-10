@@ -30,6 +30,7 @@ bool TagMF1S503x::activate() {
 }
 
 bool TagMF1S503x::select() {
+
     if (getState() != READY) {
         return false;
     }
@@ -92,14 +93,13 @@ bool TagMF1S503x::select() {
 bool TagMF1S503x::halt() {
 
     unsigned char buf[4] = { HLT_A, 0, 0, 0 };
-
     reader->turnOffEncryption();
     setState(HALT);
 
     // Calculate CRC_A
     reader->calculateCrc(buf, 2, &buf[2]);
 
-    reader->tranceive(buf, NULL, 4);
+    reader->tranceive(buf, buf, 4);
 
     // If the PICC responds with any modulation during a period of 1 ms after the end of the frame containing the
     // HLTA command, this response shall be interpreted as 'not acknowledge'.
@@ -107,10 +107,11 @@ bool TagMF1S503x::halt() {
 }
 
 bool TagMF1S503x::authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key) {
+
+    unsigned char buf[12];
     if (getState() != ACTIVE) {
         return false;
     }
-    unsigned char buf[12];
     buf[0] = (keyType == KEY_A) ? AUTH_KEY_A : AUTH_KEY_B;
     buf[1] = blockAddress;
     for (unsigned char i = 0; i < TAG_MF1S503X_KEY_SIZE; i++) {
@@ -127,7 +128,6 @@ bool TagMF1S503x::authenticate(unsigned char keyType, unsigned char blockAddress
 bool TagMF1S503x::readBlock(unsigned char blockAddress, unsigned char *buf) {
 
     if (key != NULL && !authenticate(keyType, blockAddress, key)) {
-        Serial.print("auth: false");
         return false;
     }
 
@@ -145,12 +145,9 @@ bool TagMF1S503x::readBlock(unsigned char blockAddress, unsigned char *buf) {
 bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
 
     unsigned char cmd[4];
-
     if (key != NULL && !authenticate(keyType, blockAddress, key)) {
-        Serial.print("auth: false");
         return false;
     }
-
 
     // Build command buffer
     cmd[0] = WRITE;
@@ -162,9 +159,8 @@ bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
     // Transmit the buffer and receive the response.
     reader->tranceive(cmd, cmd, 4);
 
-    // Check if ack was received.
+    // Check if nack was received.
     if (reader->getLastError() == Reader::NACK) {
-        Serial.println("got NACK step 1");
         return false;
     }
 
@@ -174,16 +170,11 @@ bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
     // Transmit the buffer and receive the response, validate CRC_A.
     reader->tranceive(buf, buf, 18);
 
-    // Check if ack was received.
-    if (reader->getLastError() == Reader::NACK) {
-        Serial.println("got NACK step 2");
-        return false;
-    }
-
     return reader->getLastError() != Reader::NACK;
 }
 
 int TagMF1S503x::readByte(unsigned char blockAddress, unsigned char pos) {
+
     unsigned char buf[18];
     if (!readBlock(blockAddress, buf)) {
         return -1;
@@ -192,6 +183,7 @@ int TagMF1S503x::readByte(unsigned char blockAddress, unsigned char pos) {
 }
 
 bool TagMF1S503x::writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value) {
+
     unsigned char buf[18];
     if (!readBlock(blockAddress, buf)) {
         return false;

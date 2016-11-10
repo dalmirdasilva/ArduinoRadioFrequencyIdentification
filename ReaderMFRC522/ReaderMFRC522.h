@@ -19,6 +19,9 @@
 #define MFR522_INT_TO_IRQ_REG(i)    (i > COM_ALL_IRQ) ? DIV_IRQ : COM_IRQ
 #define MFR522_INT_TO_IRQ_MASK(i)   (i > COM_ALL_IRQ) ? (i >> 8) & DIV_IRQ_ALL_IRQ : i & COM_IRQ_ALL_IRQ
 
+#define MFR522_SAK_BITS             0x08
+#define MFR522_ACK_BITS             0x0a
+
 // Version 0.0 (0x90)
 // Philips Semiconductors; Preliminary Specification Revision 2.0 - 01 August 2005; 16.1 self-test
 const unsigned char MFRC522_FIRMWARE_REFERENCE_V0_0[] PROGMEM = { 0x00, 0x87, 0x98, 0x0f, 0x49, 0xff, 0x07, 0x19, 0xbf, 0x22, 0x30, 0x49, 0x59,
@@ -1540,14 +1543,13 @@ public:
      */
     unsigned char writeRegisterBlock(unsigned char reg, unsigned char *buf, unsigned char len);
 
-private:
+    void turnOffEncryption();
 
     /**
      *
      */
     bool hasValidCrc(unsigned char *buf, unsigned char len);
 
-    void turnOffEncryption();
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_READER_MFRC522_H__

@@ -154,7 +154,7 @@ inline int ReaderMFRC522::tranceive(unsigned char *send, unsigned char *receive,
 
 int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc) {
 
-    int len = 0;
+    unsigned char len = 0;
     COM_IRQbits irq;
     ERRORbits error;
     CONTROLbits control;
@@ -213,28 +213,26 @@ int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsig
         return -1;
     }
 
+    len = readRegister(FIFO_LEVEL);
     control.value = readRegister(CONTROL);
 
+    // Get received data from FIFO
+    len = readRegisterBlock(FIFO_DATA, receive, len);
+
     // In this case a MIFARE Classic NAK is not OK.
-    if (len == 1 && control.RX_LAST_BITS == 4) {
+    if (len == 1 && control.RX_LAST_BITS == 4 && (receive[0] != MFR522_SAK_BITS && receive[0] != MFR522_ACK_BITS)) {
         lastError = NACK;
         return -1;
     }
 
-    // If the caller wants data back, get it from the MFRC522.
-    if (receive != NULL) {
-
-        // Get received data from FIFO
-        len = readRegisterBlock(FIFO_DATA, receive, readRegister(FIFO_LEVEL));
-
-        // We need at least the CRC_A value and all 8 bits of the last byte must be received.
-        // NOTE: casting (unsigned char) len is fine here, len > 0 and is less than FIFO size: 64
-        // NOTE: control.RX_LAST_BITS = 0 means 8 bits.
-        if (checkCrc && (len < 2 || control.RX_LAST_BITS != 0 || !hasValidCrc(receive, (unsigned char) len))) {
-            lastError = CRC_ERROR;
-            return -1;
-        }
+    // We need at least the CRC_A value and all 8 bits of the last byte must be received.
+    // NOTE: casting (unsigned char) len is fine here, len > 0 and is less than FIFO size: 64
+    // NOTE: control.RX_LAST_BITS = 0 means 8 bits.
+    if (checkCrc && (len < 2 || control.RX_LAST_BITS != 0 || !hasValidCrc(receive, (unsigned char) len))) {
+        lastError = CRC_ERROR;
+        return -1;
     }
+
     return len;
 }
 
@@ -243,7 +241,8 @@ inline int ReaderMFRC522::communicate(unsigned char command, unsigned char *send
 }
 
 int ReaderMFRC522::authenticate(unsigned char *send) {
-    return communicate(MF_AUTHENT, send, NULL, 12);
+    unsigned char receive;
+    return communicate(MF_AUTHENT, send, &receive, 12);
 }
 
 void ReaderMFRC522::turnOffEncryption() {
@@ -252,7 +251,7 @@ void ReaderMFRC522::turnOffEncryption() {
 
 bool ReaderMFRC522::hasValidCrc(unsigned char *buf, unsigned char len) {
     if (len <= 2) {
-        return true;
+        return false;
     }
     unsigned char crc[2];
     calculateCrc(buf, len - 2, crc);
@@ -288,8 +287,10 @@ void ReaderMFRC522::calculateCrc(unsigned char *buf, unsigned char len, unsigned
     // Stop calculating CRC for new content in the FIFO.
     sendCommand(IDLE);
 
-    dst[0] = readRegister(CRC_RESULT_LOW);
-    dst[1] = readRegister(CRC_RESULT_HIGH);
+    if (dst != NULL) {
+        dst[0] = readRegister(CRC_RESULT_LOW);
+        dst[1] = readRegister(CRC_RESULT_HIGH);
+    }
 }
 
 bool ReaderMFRC522::waitForRegisterBits(unsigned char reg, unsigned char mask, unsigned long timeout) {

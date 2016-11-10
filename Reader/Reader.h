@@ -85,6 +85,8 @@ public:
 
     void clearLastError();
 
+    virtual bool hasValidCrc(unsigned char *buf, unsigned char len) = 0;
+
 protected:
 
     Error lastError;
