@@ -10,11 +10,14 @@
 #include <Reader.h>
 #include <Tag.h>
 
-#define TAG_MF1S503X_KEY_SIZE                   0x06
-#define TAG_MF1S503X_ATQA_ANTICOLLISION_BIT     0x04
-#define TAG_MF1S503X_SAK_BIT                    0x20
+#define TAG_MF1S503X_KEY_TO_POS(key)            ((type == KEY_A) ? 0 : 10)
 
 class TagMF1S503x: public Tag {
+
+    static const unsigned char KEY_SIZE = 0x06;
+    static const unsigned char SECTOR_SIZE = 0x04;
+    static const unsigned char ATQA_ANTICOLLISION_BIT = 0x04;
+    static const unsigned char SAK_BIT = 0x20;
 
 public:
 
@@ -75,11 +78,6 @@ public:
         TRANSFER = 0xb0,
     };
 
-    enum KeyType {
-        KEY_A = 0x00,
-        KEY_B = 0x01,
-    };
-
     TagMF1S503x(Reader *reader);
 
     bool detect(unsigned char command);
@@ -94,13 +92,17 @@ public:
 
     bool halt();
 
-    bool authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key);
+    bool authenticate(unsigned char address, KeyType type, unsigned char *key);
 
-    bool readBlock(unsigned char blockAddress, unsigned char *buf);
+    bool readBlock(unsigned char address, unsigned char *buf);
 
-    bool writeBlock(unsigned char blockAddress, unsigned char *buf);
+    bool writeBlock(unsigned char address, unsigned char *buf);
 
-    int readByte(unsigned char blockAddress, unsigned char pos);
+    bool readBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf);
+
+    bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf);
+
+    int readByte(unsigned char address, unsigned char pos);
 
     /**
      * It just work if you call setupAuthenticationKey before it.
@@ -110,7 +112,7 @@ public:
      * As this method is intended to do they both, it requires that the read and write
      * operations are auto-authenticated.
      */
-    bool writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value);
+    bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
 
     bool decrement();
 
@@ -120,15 +122,17 @@ public:
 
     bool transfer();
 
-    bool setBlockType(unsigned char blockAddress, BlockType type);
+    bool setBlockType(unsigned char address, BlockType type);
 
-    bool readAccessBits(unsigned char blockAddress, unsigned char *buf);
+    bool readAccessBits(unsigned char sector, unsigned char *buf);
 
-    bool writeAccessBits(unsigned char blockAddress, unsigned char *buf);
+    bool writeAccessBits(unsigned char sector, unsigned char *buf);
 
-    bool setBlockPermission(unsigned char blockAddress, unsigned char permission);
+    bool setBlockPermission(unsigned char address, unsigned char permission);
 
-    bool writeKey(unsigned char blockAddress, unsigned char blockType, unsigned char *key);
+    bool writeKey(unsigned char sector, KeyType type, unsigned char *key);
+
+    bool readKey(unsigned char sector, KeyType type, unsigned char *key);
 
     void setupAuthenticationKey(KeyType keyType, unsigned char *key);
 

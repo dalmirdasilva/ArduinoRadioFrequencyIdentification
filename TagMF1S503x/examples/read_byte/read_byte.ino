@@ -15,27 +15,20 @@ void setup() {
     Serial.begin(9600);
     Serial.println("initialing");
     reader.initialize();
-    tag.setupAuthenticationKey(TagMF1S503x::KEY_A, keyA);
+    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
     Serial.println("done");
 }
 
 void loop() {
-
-    unsigned char buf[18] = { 0x22, 0x11, 0x11, 0x11, 0x22, 0x22, 0x1e, 0x1f, 0xa1, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18 };
-
     if (tag.activate()) {
-        Serial.println("Card detected: ");
-        Serial.println("Successfully authenticated.");
-        if (tag.writeBlock(1, buf)) {
-            Serial.print("data wrote successfully.");
-        } else {
-            Serial.print("error when writing: ");
+        Serial.println("Card detected");
+        Serial.print("Read byte is: ");
+        Serial.println(tag.readByte(1, 0), HEX);
+        if (reader.getLastError() != Reader::NO_ERROR) {
+            Serial.print("Last error was: ");
             Serial.println(reader.getLastError());
         }
         tag.halt();
         delay(2000);
-    } else {
-        Serial.println(reader.getLastError());
     }
-    delay(100);
 }

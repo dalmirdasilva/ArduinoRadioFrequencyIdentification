@@ -220,7 +220,7 @@ int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsig
     len = readRegisterBlock(FIFO_DATA, receive, len);
 
     // In this case a MIFARE Classic NAK is not OK.
-    if (len == 1 && control.RX_LAST_BITS == 4 && (receive[0] != MFR522_SAK_BITS && receive[0] != MFR522_ACK_BITS)) {
+    if (len == 1 && control.RX_LAST_BITS == 4 && (receive[0] != SAK && receive[0] != ACK)) {
         lastError = NACK;
         return -1;
     }

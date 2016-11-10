@@ -12,7 +12,7 @@ bool TagMF1S503x::detect(unsigned char command) {
     bool ok = reader->tranceive(buf, buf, 1) >= 0;
     if (ok) {
         setState(READY);
-        supportsAnticollision = buf[0] & TAG_MF1S503X_ATQA_ANTICOLLISION_BIT;
+        supportsAnticollision = buf[0] & ATQA_ANTICOLLISION_BIT;
     }
     return ok;
 }
@@ -78,7 +78,9 @@ bool TagMF1S503x::select() {
                     return false;
                 }
                 uid.sak = receive[0];
-                needNextCascadeLevel = (uid.sak & TAG_MF1S503X_SAK_BIT) > 0;
+
+                // TODO: Need more tests
+                needNextCascadeLevel = (uid.sak & SAK_BIT) > 0;
                 unsigned char size = 4 - needNextCascadeLevel;
                 memcpy(p, &send[2 + needNextCascadeLevel], size);
                 p += size;
@@ -106,15 +108,15 @@ bool TagMF1S503x::halt() {
     return reader->getLastError() == Reader::TIMEOUT_ERROR;
 }
 
-bool TagMF1S503x::authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key) {
+bool TagMF1S503x::authenticate(unsigned char address, KeyType type, unsigned char *key) {
 
     unsigned char buf[12];
     if (getState() != ACTIVE) {
         return false;
     }
-    buf[0] = (keyType == KEY_A) ? AUTH_KEY_A : AUTH_KEY_B;
-    buf[1] = blockAddress;
-    for (unsigned char i = 0; i < TAG_MF1S503X_KEY_SIZE; i++) {
+    buf[0] = (type == KEY_A) ? AUTH_KEY_A : AUTH_KEY_B;
+    buf[1] = address;
+    for (unsigned char i = 0; i < KEY_SIZE; i++) {
         buf[2 + i] = key[i];
     }
     for (unsigned char i = 0; i < 4; i++) {
@@ -125,15 +127,15 @@ bool TagMF1S503x::authenticate(unsigned char keyType, unsigned char blockAddress
     return reader->authenticate(buf) >= 0;
 }
 
-bool TagMF1S503x::readBlock(unsigned char blockAddress, unsigned char *buf) {
+bool TagMF1S503x::readBlock(unsigned char address, unsigned char *buf) {
 
-    if (key != NULL && !authenticate(keyType, blockAddress, key)) {
+    if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
 
     // Build command buffer
     buf[0] = READ;
-    buf[1] = blockAddress;
+    buf[1] = address;
 
     // Calculate CRC_A
     reader->calculateCrc(buf, 2, &buf[2]);
@@ -142,16 +144,16 @@ bool TagMF1S503x::readBlock(unsigned char blockAddress, unsigned char *buf) {
     return reader->tranceive(buf, buf, 4, true) == 18;
 }
 
-bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
+bool TagMF1S503x::writeBlock(unsigned char address, unsigned char *buf) {
 
     unsigned char cmd[4];
-    if (key != NULL && !authenticate(keyType, blockAddress, key)) {
+    if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
 
     // Build command buffer
     cmd[0] = WRITE;
-    cmd[1] = blockAddress;
+    cmd[1] = address;
 
     // Calculate CRC_A
     reader->calculateCrc(cmd, 2, &cmd[2]);
@@ -173,23 +175,47 @@ bool TagMF1S503x::writeBlock(unsigned char blockAddress, unsigned char *buf) {
     return reader->getLastError() != Reader::NACK;
 }
 
-int TagMF1S503x::readByte(unsigned char blockAddress, unsigned char pos) {
+bool TagMF1S503x::readBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf) {
+    unsigned char receive[18];
+    if (to <= from || to > 16) {
+        return false;
+    }
+    if (!readBlock(address, receive)) {
+        return false;
+    }
+    memcpy(buf, &receive[from], to - from);
+    return true;
+}
+
+bool TagMF1S503x::writeBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf) {
+    unsigned char receive[18];
+    if (to <= from || to > 16) {
+        return false;
+    }
+    if (!readBlock(address, receive)) {
+        return false;
+    }
+    memcpy(&receive[from], buf, to - from);
+    return writeBlock(address, receive);
+}
+
+int TagMF1S503x::readByte(unsigned char address, unsigned char pos) {
 
     unsigned char buf[18];
-    if (!readBlock(blockAddress, buf)) {
+    if (!readBlock(address, buf)) {
         return -1;
     }
     return buf[pos];
 }
 
-bool TagMF1S503x::writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value) {
+bool TagMF1S503x::writeByte(unsigned char address, unsigned char pos, unsigned char value) {
 
     unsigned char buf[18];
-    if (!readBlock(blockAddress, buf)) {
+    if (!readBlock(address, buf)) {
         return false;
     }
     buf[pos] = value;
-    return writeBlock(blockAddress, buf);
+    return writeBlock(address, buf);
 }
 
 bool TagMF1S503x::decrement() {
@@ -208,25 +234,31 @@ bool TagMF1S503x::transfer() {
     return true;
 }
 
-bool TagMF1S503x::setBlockType(unsigned char blockAddress, BlockType type) {
-    return true;
-}
-
-bool TagMF1S503x::readAccessBits(unsigned char blockAddress, unsigned char *buf) {
+bool TagMF1S503x::setBlockType(unsigned char address, BlockType type) {
 
     return true;
 }
 
-bool TagMF1S503x::writeAccessBits(unsigned char blockAddress, unsigned char *buf) {
+bool TagMF1S503x::readAccessBits(unsigned char sector, unsigned char *buf) {
+    return readBlockSlice((sector * SECTOR_SIZE) + (SECTOR_SIZE - 1), 6, 10, buf);
+}
+
+bool TagMF1S503x::writeAccessBits(unsigned char sector, unsigned char *buf) {
+    return writeBlockSlice((sector * SECTOR_SIZE) + (SECTOR_SIZE - 1), 6, 10, buf);
+}
+
+bool TagMF1S503x::setBlockPermission(unsigned char address, unsigned char permission) {
     return true;
 }
 
-bool TagMF1S503x::setBlockPermission(unsigned char blockAddress, unsigned char permission) {
-    return true;
+bool TagMF1S503x::writeKey(unsigned char sector, KeyType type, unsigned char *key) {
+    unsigned from = TAG_MF1S503X_KEY_TO_POS(key);
+    return writeBlockSlice((sector * SECTOR_SIZE) + (SECTOR_SIZE - 1), from, from + KEY_SIZE, key);
 }
 
-bool TagMF1S503x::writeKey(unsigned char blockAddress, unsigned char blockType, unsigned char *key) {
-    return true;
+bool TagMF1S503x::readKey(unsigned char sector, KeyType type, unsigned char *key) {
+    unsigned from = TAG_MF1S503X_KEY_TO_POS(key);
+    return readBlockSlice((sector * SECTOR_SIZE) + (SECTOR_SIZE - 1), from, from + KEY_SIZE, key);
 }
 
 void TagMF1S503x::setupAuthenticationKey(KeyType keyType, unsigned char *key) {

@@ -33,7 +33,7 @@ void loop() {
                 Serial.print("\n sector: ");
                 Serial.println(address / 4);
             }
-            if (tag.authenticate(TagMF1S503x::KEY_A, address, keyA)) {
+            if (tag.authenticate(Tag::KEY_A, address, keyA)) {
                 if (tag.readBlock(address, buffer)) {
                     for (int j = 0; j < 16; j++) {
                         if (buffer[j] < 0x10) {

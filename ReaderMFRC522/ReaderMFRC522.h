@@ -10,17 +10,13 @@
 #include <Arduino.h>
 #include <Reader.h>
 
-#define MFRC522_DEFAULT_TIMEOUT 100
-#define MFRC522_KEY_SIZE        6
+#define MFRC522_DEFAULT_TIMEOUT     100
 
 #define MFR522_INT_TO_EN_REG(i)     (i > COM_ALL_IRQ) ? DIV_I_EN : COM_I_EN
 #define MFR522_INT_TO_EN_MASK(i)    (i > COM_ALL_IRQ) ? (i >> 8) & DIV_I_EN_INTERRUPT_EN : i & COM_I_EN_INTERRUPT_EN
 
 #define MFR522_INT_TO_IRQ_REG(i)    (i > COM_ALL_IRQ) ? DIV_IRQ : COM_IRQ
 #define MFR522_INT_TO_IRQ_MASK(i)   (i > COM_ALL_IRQ) ? (i >> 8) & DIV_IRQ_ALL_IRQ : i & COM_IRQ_ALL_IRQ
-
-#define MFR522_SAK_BITS             0x08
-#define MFR522_ACK_BITS             0x0a
 
 // Version 0.0 (0x90)
 // Philips Semiconductors; Preliminary Specification Revision 2.0 - 01 August 2005; 16.1 self-test
@@ -51,6 +47,9 @@ const byte FM17522_FIRMWARE_REFERENCE[] PROGMEM = { 0x00, 0xd6, 0x78, 0x8c, 0xe2
         0x82, 0x26, 0xea, 0x2a, 0x62 };
 
 class ReaderMFRC522: public Reader, public RegisterBasedDevice {
+
+    static const unsigned char SAK = 0x08;
+    static const unsigned char ACK = 0x0a;
 
     RegisterBasedDevice *device;
 

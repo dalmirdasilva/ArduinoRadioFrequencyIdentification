@@ -32,6 +32,11 @@ public:
         MIFARE_PLUS_4K = 0x07
     };
 
+    enum KeyType {
+        KEY_A = 0x00,
+        KEY_B = 0x01
+    };
+
     struct Uid {
 
         // Number of bytes in the UID. 4, 7 or 10.
@@ -60,15 +65,19 @@ public:
 
     virtual bool halt() = 0;
 
-    virtual bool authenticate(unsigned char keyType, unsigned char blockAddress, unsigned char *key) = 0;
+    virtual bool authenticate(unsigned char address, KeyType type, unsigned char *key) = 0;
 
-    virtual bool readBlock(unsigned char blockAddress, unsigned char *buf) = 0;
+    virtual bool readBlock(unsigned char address, unsigned char *buf) = 0;
 
-    virtual bool writeBlock(unsigned char blockAddress, unsigned char *buf) = 0;
+    virtual bool writeBlock(unsigned char address, unsigned char *buf) = 0;
 
-    virtual int readByte(unsigned char blockAddress, unsigned char pos) = 0;
+    virtual bool readBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf) = 0;
 
-    virtual bool writeByte(unsigned char blockAddress, unsigned char pos, unsigned char value) = 0;
+    virtual bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf) = 0;
+
+    virtual int readByte(unsigned char address, unsigned char pos) = 0;
+
+    virtual bool writeByte(unsigned char address, unsigned char pos, unsigned char value) = 0;
 
     virtual bool decrement() = 0;
 
@@ -78,15 +87,17 @@ public:
 
     virtual bool transfer() = 0;
 
-    virtual bool setBlockType(unsigned char blockAddress, BlockType type) = 0;
+    virtual bool setBlockType(unsigned char address, BlockType type) = 0;
 
-    virtual bool readAccessBits(unsigned char blockAddress, unsigned char *buf) = 0;
+    virtual bool readAccessBits(unsigned char sector, unsigned char *buf) = 0;
 
-    virtual bool writeAccessBits(unsigned char blockAddress, unsigned char *buf) = 0;
+    virtual bool writeAccessBits(unsigned char sector, unsigned char *buf) = 0;
 
-    virtual bool setBlockPermission(unsigned char blockAddress, unsigned char permission) = 0;
+    virtual bool setBlockPermission(unsigned char address, unsigned char permission) = 0;
 
-    virtual bool writeKey(unsigned char blockAddress, unsigned char blockType, unsigned char *key) = 0;
+    virtual bool writeKey(unsigned char sector, KeyType type, unsigned char *key) = 0;
+
+    virtual bool readKey(unsigned char sector, KeyType type, unsigned char *key) = 0;
 
     Uid getUid();
 

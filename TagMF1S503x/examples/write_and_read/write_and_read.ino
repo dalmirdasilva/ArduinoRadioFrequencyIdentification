@@ -15,7 +15,7 @@ void setup() {
     Serial.begin(9600);
     Serial.println("initialing");
     reader.initialize();
-    tag.setupAuthenticationKey(TagMF1S503x::KEY_A, keyA);
+    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
     Serial.println("done");
 }
 

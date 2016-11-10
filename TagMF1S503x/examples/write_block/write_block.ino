@@ -27,7 +27,7 @@ void loop() {
         for (int i = 0; i < uid.size; i++) {
             Serial.println(uid.uid[i], HEX);
         }
-        if (tag.authenticate(TagMF1S503x::KEY_A, 5, keyA)) {
+        if (tag.authenticate(Tag::KEY_A, 5, keyA)) {
             Serial.println("Successfully authenticated.");
             if (tag.writeBlock(5, buf)) {
                 Serial.print("data wrote successfully.");
