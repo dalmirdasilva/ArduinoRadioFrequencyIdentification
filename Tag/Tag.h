@@ -57,6 +57,18 @@ public:
         VALUE_BLOCK = 0x01,
     };
 
+    /**
+     * This function performs a 'Request-Idle', 'Anticollision', 'Select' sequence to activate the PICC and
+     * change its state from IDLE to ACTIVE state. Cascaded serial numbers are handled correctly.
+     */
+    virtual bool activateIdle() = 0;
+
+    /**
+     * This function performs a 'Request-All', 'Anticollision', 'Select' sequence to activate the PICC and
+     * change its state from IDLE to ACTIVE state. Cascaded serial numbers are handled correctly.
+     */
+    virtual bool activateWakeUp() = 0;
+
     virtual bool request() = 0;
 
     virtual bool wakeUp() = 0;
@@ -65,6 +77,12 @@ public:
 
     virtual bool halt() = 0;
 
+    /**
+     * This function authenticates one card's sector (according to the block address) using the specified
+     * master key A or B, addressed with auth_mode. Having send the command to the card the function
+     * waits for the card's answer. This function is calling compatible with authentication functions former
+     * reader IC's. The keys are stored by the microcontroller, which should be capable for the key management.
+     */
     virtual bool authenticate(unsigned char address, KeyType type, unsigned char *key) = 0;
 
     virtual bool readBlock(unsigned char address, unsigned char *buf) = 0;

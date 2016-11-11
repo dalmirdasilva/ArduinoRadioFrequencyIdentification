@@ -3,6 +3,7 @@
  *
  * @author Dalmir da Silva <dalmirdasilva@gmail.com>
  */
+
 #ifndef __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1S503X_H__
 #define __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1S503X_H__ 1
 
@@ -10,8 +11,12 @@
 #include <Reader.h>
 #include <Tag.h>
 
-#define TAG_MF1S503X_KEY_TO_POS(key)            ((type == KEY_A) ? 0 : 10)
+#define TAG_MF1S503X_KEY_TO_POS(key)                    ((type == KEY_A) ? 0 : 10)
+#define TAG_MF1S503X_ADDR_IS_SEC_TRAILER(address)       ((address % SECTOR_SIZE) == (SECTOR_SIZE - 1))
 
+/**
+ * MIFARE Classic 1K
+ */
 class TagMF1S503x: public Tag {
 
     static const unsigned char KEY_SIZE = 0x06;
@@ -80,13 +85,15 @@ public:
 
     TagMF1S503x(Reader *reader);
 
+    bool activateIdle();
+
+    bool activateWakeUp();
+
     bool detect(unsigned char command);
 
     bool request();
 
     bool wakeUp();
-
-    bool activate();
 
     bool select();
 
@@ -136,11 +143,15 @@ public:
 
     void setupAuthenticationKey(KeyType keyType, unsigned char *key);
 
+    void setAllowSectorTrailerWrite(bool allow);
+
 private:
 
     KeyType keyType;
 
     unsigned char *key;
+
+    bool allowSectorTrailerWrite;
 
     unsigned char computeNvb(unsigned char collisionPos);
 };

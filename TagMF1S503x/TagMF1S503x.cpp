@@ -2,7 +2,15 @@
 #include <Reader.h>
 
 TagMF1S503x::TagMF1S503x(Reader *reader)
-        : Tag(reader), keyType(KEY_A), key(NULL) {
+        : Tag(reader), keyType(KEY_A), key(NULL), allowSectorTrailerWrite(false) {
+}
+
+bool TagMF1S503x::activateIdle() {
+    return request() && hasAnticollisionSupport() && select();
+}
+
+bool TagMF1S503x::activateWakeUp() {
+    return wakeUp() && hasAnticollisionSupport() && select();
 }
 
 bool TagMF1S503x::detect(unsigned char command) {
@@ -23,10 +31,6 @@ bool TagMF1S503x::request() {
 
 bool TagMF1S503x::wakeUp() {
     return detect(WAKE_UP);
-}
-
-bool TagMF1S503x::activate() {
-    return request() && hasAnticollisionSupport() && select();
 }
 
 bool TagMF1S503x::select() {
@@ -147,6 +151,11 @@ bool TagMF1S503x::readBlock(unsigned char address, unsigned char *buf) {
 bool TagMF1S503x::writeBlock(unsigned char address, unsigned char *buf) {
 
     unsigned char cmd[4];
+
+    if (TAG_MF1S503X_ADDR_IS_SEC_TRAILER(address) && !allowSectorTrailerWrite) {
+        return false;
+    }
+
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
@@ -264,6 +273,10 @@ bool TagMF1S503x::readKey(unsigned char sector, KeyType type, unsigned char *key
 void TagMF1S503x::setupAuthenticationKey(KeyType keyType, unsigned char *key) {
     this->keyType = keyType;
     this->key = key;
+}
+
+void TagMF1S503x::setAllowSectorTrailerWrite(bool allow) {
+    allowSectorTrailerWrite = allow;
 }
 
 unsigned char TagMF1S503x::computeNvb(unsigned char collisionPos) {
