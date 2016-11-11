@@ -33,6 +33,8 @@ public:
 
     TagMF1S503x(Reader *reader);
 
+    bool writeBlock(unsigned char address, unsigned char *buf);
+
     unsigned char getSectorSize(unsigned char sector);
 
     unsigned char isAddressSectorTrailer(unsigned char address);

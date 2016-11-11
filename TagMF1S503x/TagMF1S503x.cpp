@@ -5,6 +5,13 @@ TagMF1S503x::TagMF1S503x(Reader *reader)
         : Tag(reader) {
 }
 
+bool TagMF1S503x::writeBlock(unsigned char address, unsigned char *buf) {
+    if (getTagType() != MIFARE_1K) {
+        return false;
+    }
+    return Tag::writeBlock(address, buf);
+}
+
 unsigned char TagMF1S503x::getSectorSize(unsigned char sector) {
     return TAG_MF1S503X_SECTOR_SIZE;
 }

@@ -5,6 +5,13 @@ TagMF1ICS70::TagMF1ICS70(Reader *reader)
         : Tag(reader) {
 }
 
+bool TagMF1ICS70::writeBlock(unsigned char address, unsigned char *buf) {
+    if (getTagType() != MIFARE_4K) {
+        return false;
+    }
+    return Tag::writeBlock(address, buf);
+}
+
 unsigned char TagMF1ICS70::getSectorSize(unsigned char sector) {
     unsigned char size = TAG_MF1ICS70_LOW_SECTOR_SIZE;
     if (sector >= TAG_MF1ICS70_LOW_SECTOR_COUNT) {

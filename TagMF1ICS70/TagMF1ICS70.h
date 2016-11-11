@@ -41,6 +41,8 @@ public:
 
     TagMF1ICS70(Reader *reader);
 
+    bool writeBlock(unsigned char address, unsigned char *buf);
+
     unsigned char getSectorSize(unsigned char sector);
 
     unsigned char isAddressSectorTrailer(unsigned char address);
