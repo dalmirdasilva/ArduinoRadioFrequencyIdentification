@@ -7,76 +7,47 @@
 #ifndef __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1ICS70_H__
 #define __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1ICS70_H__ 1
 
-#include <Arduino.h>
 #include <Reader.h>
 #include <Tag.h>
 
+// The 4 kByte EEPROM memory is organized in 32 sectors with 4 blocks
+// and in 8 sectors with 16 blocks. One block consists of 16 bytes.
+
+#define TAG_MF1ICS70_LOW_SECTOR_COUNT       32
+#define TAG_MF1ICS70_HIGH_SECTOR_COUNT      8
+
+#define TAG_MF1ICS70_LOW_SECTOR_SIZE        4
+#define TAG_MF1ICS70_HIGH_SECTOR_SIZE       16
+
+#define TAG_MF1ICS70_LOW_MEMORY_SIZE        TAG_MF1ICS70_LOW_SECTOR_COUNT * TAG_MF1ICS70_LOW_SECTOR_SIZE
+
 /**
- *
- * NOT IMPLEMENTED
- *
- *
- * MIFARE Ultralight contactless single-ticket IC
+ * MIFARE Classic 4K
  */
 class TagMF1ICS70: public Tag {
 
 public:
 
-    // All MIFARE Classic commands use the MIFARE Crypto1 and require an authentication.
-    enum Command {
+    enum Permission {
+        LEVEL_0 = 0x00,
+        LEVEL_1 = 0x01,
+        LEVEL_2 = 0x02,
+        LEVEL_3 = 0x03,
+        LEVEL_4 = 0x04,
+        LEVEL_5 = 0x05,
+        LEVEL_6 = 0x06,
+        LEVEL_7 = 0x07
     };
 
     TagMF1ICS70(Reader *reader);
 
-    bool detect(unsigned char command);
+    unsigned char getSectorSize(unsigned char sector);
 
-    bool request();
+    unsigned char isAddressSectorTrailer(unsigned char address);
 
-    bool wakeUp();
+    unsigned char addressToSector(unsigned char address);
 
-    bool activate();
-
-    bool select();
-
-    bool halt();
-
-    bool authenticate(unsigned char address, KeyType type, unsigned char *key);
-
-    bool readBlock(unsigned char address, unsigned char *buf);
-
-    bool writeBlock(unsigned char address, unsigned char *buf);
-
-    bool readBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf);
-
-    bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char to, unsigned char *buf);
-
-    int readByte(unsigned char address, unsigned char pos);
-
-    bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
-
-    bool decrement();
-
-    bool increment();
-
-    bool restore();
-
-    bool transfer();
-
-    bool setBlockType(unsigned char address, BlockType type);
-
-    bool readAccessBits(unsigned char sector, unsigned char *buf);
-
-    bool writeAccessBits(unsigned char sector, unsigned char *buf);
-
-    bool setBlockPermission(unsigned char address, unsigned char permission);
-
-    bool writeKey(unsigned char sector, KeyType type, unsigned char *key);
-
-    bool readKey(unsigned char sector, KeyType type, unsigned char *key);
-
-    void setupAuthenticationKey(KeyType keyType, unsigned char *key);
-
-    void setAllowSectorTrailerWrite(bool allow);
+    unsigned char getSectorTrailerAddress(unsigned char sector);
 };
 
-#endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1ICS70_H__
+#endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1S503X_H__

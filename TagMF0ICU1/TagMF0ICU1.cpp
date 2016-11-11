@@ -4,3 +4,4 @@
 TagMF0ICU1::TagMF0ICU1(Reader *reader)
         : Tag(reader) {
 }
+

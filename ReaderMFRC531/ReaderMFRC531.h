@@ -10,13 +10,6 @@
 #include <Arduino.h>
 #include <Reader.h>
 
-/**
- *
- *
- * NOT IMPLEMENTED
- *
- *
- */
 class ReaderMFRC531: public Reader, public RegisterBasedDevice {
 
 public:
