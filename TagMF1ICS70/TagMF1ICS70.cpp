@@ -43,8 +43,8 @@ unsigned char TagMF1ICS70::getSectorTrailerAddress(unsigned char sector) {
     unsigned char sectorSize, offset = 0;
     sectorSize = getSectorSize(sector);
     if (sector >= TAG_MF1ICS70_LOW_SECTOR_COUNT) {
-        offset = TAG_MF1ICS70_LOW_MEMORY_SIZE - 1;
-        sector -= TAG_MF1ICS70_LOW_SECTOR_COUNT - 1;
+        offset = TAG_MF1ICS70_LOW_MEMORY_SIZE;
+        sector -= TAG_MF1ICS70_LOW_SECTOR_COUNT;
     }
     return offset + (sector * sectorSize) + (sectorSize - 1);
 }

@@ -126,7 +126,7 @@ public:
      * This function performs a 'Request-Idle', 'Anticollision', 'Select' sequence to activate the PICC and
      * change its state from IDLE to ACTIVE state. Cascaded serial numbers are handled correctly.
      */
-    virtual bool activateIdle();
+    virtual bool activate();
 
     /**
      * This function performs a 'Request-All', 'Anticollision', 'Select' sequence to activate the PICC and

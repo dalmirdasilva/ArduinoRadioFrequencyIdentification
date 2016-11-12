@@ -19,7 +19,7 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
 
-    Serial.println("initializing");
+    Serial.println("Initializing...");
 
     reader.initialize();
     reader.flushQueue();
@@ -38,7 +38,7 @@ void setup() {
     Serial.println(reader.readRegister(ReaderMFRC522::COM_IRQ), BIN);
     Serial.println(reader.readRegister(ReaderMFRC522::FIFO_LEVEL), DEC);
 
-    Serial.println("keep sending y to the serial until FIFO gets full and a irq is triggered...");
+    Serial.println("Keep sending y to the serial until FIFO gets full and a irq is triggered...");
 }
 
 void loop() {
@@ -53,9 +53,9 @@ void loop() {
     }
     while (Serial.available() > 0 && Serial.read() == 'y') {
         reader.writeRegister(ReaderMFRC522::FIFO_DATA, 0xff);
-        Serial.print("irg reg: ");
+        Serial.print("COM_IRQ reg: ");
         Serial.println(reader.readRegister(ReaderMFRC522::COM_IRQ), BIN);
-        Serial.print("fifo level: ");
+        Serial.print("FIFO level: ");
         Serial.println(reader.readRegister(ReaderMFRC522::FIFO_LEVEL), DEC);
     }
 }

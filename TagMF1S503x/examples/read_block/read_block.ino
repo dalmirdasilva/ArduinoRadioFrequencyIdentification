@@ -4,41 +4,35 @@
 
 #define SS_PIN      10
 #define RST_PIN     3
+#define ADDRESS     0
 
 RegisterBasedSPIDevice device(SS_PIN);
 ReaderMFRC522 reader(&device, RST_PIN);
 TagMF1S503x tag(&reader);
 
+unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+unsigned char buf[18] = { 0 };
+
 void setup() {
     Serial.begin(9600);
-    Serial.println("initialing");
+    Serial.println("Initialing...");
     reader.initialize();
-    Serial.println("done");
+    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
+    Serial.println("Waiting card proximity...");
 }
 
 void loop() {
-
-    unsigned char buf[18] = { 0 };
-    unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
     if (tag.activate()) {
-        Serial.println(" Card detected: ");
-        Tag::Uid uid = tag.getUid();
-        for (int i = 0; i < uid.size; i++) {
-            Serial.println(uid.uid[i], HEX);
-        }
-        if (tag.authenticate(Tag::KEY_A, 3, keyA)) {
-            Serial.println("Successfully authenticated.");
-            if (tag.readBlock(3, buf)) {
-                Serial.println("Successfully read.");
-                for (int i = 0; i < 16; i++) {
-                    Serial.print(buf[i], HEX);
-                    Serial.print(" ");
-                }
+        Serial.println("Card detected.");
+        if (tag.readBlock(ADDRESS, buf)) {
+            Serial.println("Successfully read.");
+            for (int i = 0; i < 16; i++) {
+                Serial.print(buf[i], HEX);
+                Serial.print(" ");
             }
-            Serial.println();
-            Serial.println(tag.halt());
         }
+        Serial.println();
+        tag.halt();
+        delay(1000);
     }
-    delay(100);
 }

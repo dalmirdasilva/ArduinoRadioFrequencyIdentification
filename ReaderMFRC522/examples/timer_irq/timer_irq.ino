@@ -20,7 +20,7 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
 
-    Serial.println("initializing");
+    Serial.println("Initializing...");
 
     reader.initialize();
     reader.stopTimer();
@@ -33,7 +33,7 @@ void setup() {
     attachInterrupt(0, irq, FALLING);
     reader.startTimer();
 
-    Serial.println("done");
+    Serial.println("Done.");
 }
 
 void loop() {

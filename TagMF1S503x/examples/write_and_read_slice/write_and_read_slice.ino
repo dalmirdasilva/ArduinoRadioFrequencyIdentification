@@ -14,35 +14,31 @@ TagMF1S503x tag(&reader);
 
 unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 unsigned char writeSlice[SLICE_LEN] = { 0x99, 0x90, 0x91, 0x93 };
-unsigned char readSlice[SLICE_LEN];
+unsigned char readSlice[SLICE_LEN] = {};
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("initialing");
+    Serial.println("Initialing...");
     reader.initialize();
     tag.setupAuthenticationKey(Tag::KEY_A, keyA);
-    Serial.println("done");
+    Serial.println("Waiting card proximity...");
 }
 
 void loop() {
     if (tag.activate()) {
-        Serial.println("Card detected");
+        Serial.println("Card detected.");
         Serial.println("Writing block slice...");
-        if (tag.writeBlockSlice(ADDRESS, FROM, FROM + SLICE_LEN, writeSlice)) {
+        if (tag.writeBlockSlice(ADDRESS, FROM, SLICE_LEN, writeSlice)) {
             Serial.println("Reading block slice...");
-            if (tag.readBlockSlice(ADDRESS, FROM, FROM + SLICE_LEN, readSlice)) {
+            if (tag.readBlockSlice(ADDRESS, FROM, SLICE_LEN, readSlice)) {
                 for (int i = 0; i < SLICE_LEN; i++) {
                     Serial.print(readSlice[i], HEX);
                     Serial.print(" ");
                 }
             }
         }
-        if (reader.getLastError() != Reader::NO_ERROR) {
-            Serial.print("Last error was: ");
-            Serial.println(reader.getLastError());
-        }
         Serial.println();
         tag.halt();
-        delay(2000);
+        delay(1000);
     }
 }

@@ -5,6 +5,7 @@
 #define SS_PIN          10
 #define RST_PIN         3
 
+#define SECTOR          4
 #define KEY_SIZE        6
 
 RegisterBasedSPIDevice device(SS_PIN);
@@ -16,17 +17,17 @@ unsigned char key[KEY_SIZE];
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("initialing");
+    Serial.println("Initialing...");
     reader.initialize();
     tag.setupAuthenticationKey(Tag::KEY_A, keyA);
-    Serial.println("done");
+    Serial.println("Waiting card proximity...");
 }
 
 void loop() {
     if (tag.activate()) {
-        Serial.println("Card detected");
+        Serial.println("Card detected.");
         Serial.println("Reading key...");
-        if (tag.readKey(0, Tag::KEY_B, key)) {
+        if (tag.readKey(SECTOR, Tag::KEY_B, key)) {
             for (int i = 0; i < KEY_SIZE; i++) {
                 Serial.print(key[i], HEX);
                 Serial.print(" ");

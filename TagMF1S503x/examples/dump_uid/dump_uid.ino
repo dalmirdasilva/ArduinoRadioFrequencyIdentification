@@ -4,8 +4,6 @@
 
 #define SS_PIN      10
 #define RST_PIN     3
-#define ADDRESS     2
-#define POS         4
 
 RegisterBasedSPIDevice device(SS_PIN);
 ReaderMFRC522 reader(&device, RST_PIN);
@@ -23,12 +21,14 @@ void setup() {
 
 void loop() {
     if (tag.activate()) {
-        Serial.println("Card detected.");
-        if (tag.writeByte(ADDRESS, POS, 0xaa)) {
-            Serial.print("Byte was written successfuly.");
+        Serial.print("Card detected.\nuid: ");
+        Tag::Uid uid = tag.getUid();
+        for (int i = 0; i < uid.size; i++) {
+            Serial.print(uid.uid[i], HEX);
+            Serial.print(" ");
         }
+        Serial.println("\nDone.");
         tag.halt();
-
         delay(1000);
     }
 }

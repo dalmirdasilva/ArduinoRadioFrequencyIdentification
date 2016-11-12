@@ -13,9 +13,6 @@
 
 #define TAG_MF1S503X_SECTOR_SIZE    4
 
-/**
- * MIFARE Classic 1K
- */
 class TagMF1S503x: public Tag {
 
 public:

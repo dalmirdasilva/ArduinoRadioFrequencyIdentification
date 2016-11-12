@@ -11,13 +11,15 @@ TagMF1S503x tag(&reader);
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("initialing");
+    Serial.println("Initialing...");
     reader.initialize();
-    Serial.println("done");
+    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
+    Serial.println("Waiting card proximity...");
 }
 
 void loop() {
     if (tag.request()) {
         Serial.println("Card detected.");
+        delay(1000);
     }
 }

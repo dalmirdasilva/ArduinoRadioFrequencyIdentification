@@ -21,9 +21,6 @@
 
 #define TAG_MF1ICS70_LOW_MEMORY_SIZE        TAG_MF1ICS70_LOW_SECTOR_COUNT * TAG_MF1ICS70_LOW_SECTOR_SIZE
 
-/**
- * MIFARE Classic 4K
- */
 class TagMF1ICS70: public Tag {
 
 public:

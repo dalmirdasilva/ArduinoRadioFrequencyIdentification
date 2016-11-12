@@ -9,7 +9,7 @@
 
 Tag::Tag(Reader *reader)
         : reader(reader), tagType(MIFARE_UNKNOWN), uid( { 0 }), supportsAnticollision(false), state(POWER_OFF), keyType(KEY_A), key(NULL), sectorTrailerProtected(
-        false) {
+                true) {
 }
 
 Tag::~Tag() {
@@ -35,7 +35,7 @@ Tag::State Tag::getState() {
     return state;
 }
 
-bool Tag::activateIdle() {
+bool Tag::activate() {
     return request() && hasAnticollisionSupport() && select();
 }
 
@@ -162,7 +162,7 @@ bool Tag::readBlock(unsigned char address, unsigned char *buf) {
 
 bool Tag::writeBlock(unsigned char address, unsigned char *buf) {
     unsigned char cmd[4];
-    if (isAddressSectorTrailer(address) && !sectorTrailerProtected) {
+    if (isAddressSectorTrailer(address) && sectorTrailerProtected) {
         return false;
     }
     if (key != NULL && !authenticate(address, keyType, key)) {
@@ -258,12 +258,12 @@ bool Tag::setBlockPermission(unsigned char address, unsigned char permission) {
 
 bool Tag::writeKey(unsigned char sector, KeyType type, unsigned char *key) {
     unsigned from = TAG_KEY_TO_POS(key);
-    return writeBlockSlice(getSectorTrailerAddress(sector), from, from + TAG_KEY_SIZE, key);
+    return writeBlockSlice(getSectorTrailerAddress(sector), from, TAG_KEY_SIZE, key);
 }
 
 bool Tag::readKey(unsigned char sector, KeyType type, unsigned char *key) {
     unsigned from = TAG_KEY_TO_POS(key);
-    return readBlockSlice(getSectorTrailerAddress(sector), from, from + TAG_KEY_SIZE, key);
+    return readBlockSlice(getSectorTrailerAddress(sector), from, TAG_KEY_SIZE, key);
 }
 
 void Tag::setupAuthenticationKey(KeyType keyType, unsigned char *key) {

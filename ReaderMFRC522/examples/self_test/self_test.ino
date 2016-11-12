@@ -14,11 +14,11 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
 
-    Serial.println("initializing");
+    Serial.println("Initializing...");
 
     reader.initialize();
 
-    Serial.print("version: ");
+    Serial.print("Version: ");
     switch (reader.getVersion()) {
     case ReaderMFRC522::CLONE:
         Serial.println("clone");
@@ -37,15 +37,15 @@ void setup() {
         return;
     }
 
-    Serial.print("self test: ");
+    Serial.print("Self test: ");
     if (reader.performSelfTest()) {
         digitalWrite(LED_PIN, HIGH);
-        Serial.println("passed");
+        Serial.println("Passed!");
     } else {
         Serial.println("**failed**");
     }
 
-    Serial.println("done");
+    Serial.println("Done");
 }
 
 void loop() {

@@ -1,5 +1,5 @@
 ARDUINO_LIB_PATH=~/Arduino/libraries
-LIB_LIST=RadioFrequencyIdentification RadioFrequencyIdentificationMFRC522
+LIB_LIST=Reader ReaderMFRC522 ReaderMFRC530 ReaderMFRC531 Tag TagMF0ICU1 TagMF1ICS70 TagMF1S503x
 SOURCE_PATH=`pwd`
 
 all: 
