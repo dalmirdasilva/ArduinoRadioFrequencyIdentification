@@ -245,7 +245,7 @@ int ReaderMFRC522::authenticate(unsigned char *send) {
     return communicate(MF_AUTHENT, send, &receive, 12);
 }
 
-void ReaderMFRC522::turnOffEncryption() {
+void ReaderMFRC522::stopCrypto() {
     clearRegisterBits(STATUS2, STATUS2_MF_CRYPTO1_ON);
 }
 

@@ -63,7 +63,7 @@ public:
 
     virtual int authenticate(unsigned char *send) = 0;
 
-    virtual void turnOffEncryption() = 0;
+    virtual void stopCrypto() = 0;
 
     virtual unsigned int calculateCrc(unsigned char *buf, unsigned char len) = 0;
 

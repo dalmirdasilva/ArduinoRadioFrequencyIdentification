@@ -96,7 +96,7 @@ public:
 
     unsigned char writeRegisterBlock(unsigned char reg, unsigned char *buf, unsigned char len);
 
-    void turnOffEncryption();
+    void stopCrypto();
 
     bool hasValidCrc(unsigned char *buf, unsigned char len);
 

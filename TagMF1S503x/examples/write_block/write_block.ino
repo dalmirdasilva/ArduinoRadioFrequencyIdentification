@@ -15,7 +15,7 @@ unsigned char buf[18] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("Initialing...");
+    Serial.println("Initializing...");
     reader.initialize();
     tag.setupAuthenticationKey(Tag::KEY_A, keyA);
     Serial.println("Waiting card proximity...");

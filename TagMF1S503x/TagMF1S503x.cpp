@@ -20,6 +20,10 @@ unsigned char TagMF1S503x::addressToSector(unsigned char address) {
     return address / TAG_MF1S503X_SECTOR_SIZE;
 }
 
+unsigned char TagMF1S503x::addressToBlock(unsigned char address) {
+    return address % TAG_MF1S503X_SECTOR_SIZE;
+}
+
 unsigned char TagMF1S503x::isAddressSectorTrailer(unsigned char address) {
     return ((address % TAG_MF1S503X_SECTOR_SIZE) == (TAG_MF1S503X_SECTOR_SIZE - 1));
 }

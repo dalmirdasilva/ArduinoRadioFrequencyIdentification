@@ -12,10 +12,13 @@
 #define TAG_SAK_BIT                             0x20
 #define TAG_ATQA_ANTICOLLISION_BIT              0x04
 
+#define TAG_BLOCK_SIZE                          0x10
 #define TAG_KEY_SIZE                            0x06
+#define TAG_ACCESS_BITS_SIZE                    0x04
+#define TAG_ACCESS_POSITION                     0x06
 #define TAG_DEFAULT_SECTOR_SIZE                 0x04
 
-#define TAG_KEY_TO_POS(key)                     ((type == KEY_A) ? 0 : 10)
+#define TAG_KEY_TYPE_TO_POS(type)               (((type) == KEY_A) ? 0 : 10)
 
 class Tag {
 
@@ -47,6 +50,17 @@ public:
     enum BlockType {
         DATA_BLOCK = 0x00,
         VALUE_BLOCK = 0x01,
+    };
+
+    enum Access {
+        CONDITION_0 = 0x00,
+        CONDITION_1 = 0x01,
+        CONDITION_2 = 0x02,
+        CONDITION_3 = 0x03,
+        CONDITION_4 = 0x04,
+        CONDITION_5 = 0x05,
+        CONDITION_6 = 0x06,
+        CONDITION_7 = 0x07
     };
 
     // All MIFARE Classic commands use the MIFARE Crypto1 and require an authentication.
@@ -172,19 +186,35 @@ public:
 
     virtual bool setBlockType(unsigned char address, BlockType type);
 
-    virtual bool readAccessBits(unsigned char sector, unsigned char *buf);
+    virtual bool readAccessBits(unsigned char sector, unsigned char *accessBits);
 
-    virtual bool writeAccessBits(unsigned char sector, unsigned char *buf);
+    virtual bool writeAccessBits(unsigned char sector, unsigned char *accessBits, unsigned char *keyA, unsigned char *keyB);
 
-    virtual bool setBlockPermission(unsigned char address, unsigned char permission);
+    /**
+     * For the first 32 sectors (first 2 Kbytes of NV-memory) the access conditions can be set individually for a data area sized one block.
+     * For the last 8 sectors (upper 2 Kbytes of NV-memory) access conditions can be set individually for a data area sized 5 blocks.
+     */
+    virtual bool setAccessCondition(unsigned char sector, unsigned char block, Access access, unsigned char *keyA, unsigned char *keyB);
 
-    virtual bool writeKey(unsigned char sector, KeyType type, unsigned char *key);
+    virtual bool getAccessCondition(unsigned char address, Access *access);
+
+    /**
+     * Remark: With each memory access the internal logic verifies the format of the access conditions.
+     * If it detects a format violation the whole sector is irreversible blocked.
+     */
+    virtual bool writeKey(unsigned char sector, KeyType type, unsigned char *keyA, unsigned char *keyB);
 
     virtual bool readKey(unsigned char sector, KeyType type, unsigned char *key);
 
     virtual void setupAuthenticationKey(KeyType keyType, unsigned char *key);
 
     virtual void setSectorTrailerProtected(bool protect);
+
+    virtual bool isAccessBitsCorrect(unsigned char *accessBits);
+
+    virtual void packAccessBits(unsigned char *accessBits, unsigned char c1, unsigned char c2, unsigned char c3);
+
+    virtual void unpackAccessBits(unsigned char *accessBits, unsigned char *c1, unsigned char *c2, unsigned char *c3);
 
 protected:
 
@@ -211,6 +241,8 @@ protected:
     virtual unsigned char isAddressSectorTrailer(unsigned char address) = 0;
 
     virtual unsigned char addressToSector(unsigned char address) = 0;
+
+    virtual unsigned char addressToBlock(unsigned char address) = 0;
 
     virtual unsigned char getSectorTrailerAddress(unsigned char sector) = 0;
 

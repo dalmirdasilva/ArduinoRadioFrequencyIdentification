@@ -15,7 +15,7 @@ unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("Initialing...");
+    Serial.println("Initializing...");
     reader.initialize();
     tag.setupAuthenticationKey(Tag::KEY_A, keyA);
     Serial.println("Waiting card proximity...");
@@ -25,7 +25,7 @@ void loop() {
     if (tag.activate()) {
         Serial.println("Card detected.");
         if (tag.writeByte(ADDRESS, POS, 0xaa)) {
-            Serial.print("Byte was written successfuly.");
+            Serial.print("Byte was written successfully.");
         }
         tag.halt();
 

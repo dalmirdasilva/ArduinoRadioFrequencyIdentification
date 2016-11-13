@@ -17,17 +17,6 @@ class TagMF1S503x: public Tag {
 
 public:
 
-    enum Permission {
-        LEVEL_0 = 0x00,
-        LEVEL_1 = 0x01,
-        LEVEL_2 = 0x02,
-        LEVEL_3 = 0x03,
-        LEVEL_4 = 0x04,
-        LEVEL_5 = 0x05,
-        LEVEL_6 = 0x06,
-        LEVEL_7 = 0x07
-    };
-
     TagMF1S503x(Reader *reader);
 
     bool writeBlock(unsigned char address, unsigned char *buf);
@@ -37,6 +26,8 @@ public:
     unsigned char isAddressSectorTrailer(unsigned char address);
 
     unsigned char addressToSector(unsigned char address);
+
+    unsigned char addressToBlock(unsigned char address);
 
     unsigned char getSectorTrailerAddress(unsigned char sector);
 };

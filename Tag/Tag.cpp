@@ -9,7 +9,7 @@
 
 Tag::Tag(Reader *reader)
         : reader(reader), tagType(MIFARE_UNKNOWN), uid( { 0 }), supportsAnticollision(false), state(POWER_OFF), keyType(KEY_A), key(NULL), sectorTrailerProtected(
-                true) {
+        true) {
 }
 
 Tag::~Tag() {
@@ -45,7 +45,7 @@ bool Tag::activateWakeUp() {
 
 bool Tag::detect(unsigned char command) {
     unsigned char buf[2] = { command, 0x00 };
-    reader->turnOffEncryption();
+    reader->stopCrypto();
     reader->setBitFraming(0, 0x07);
     bool ok = reader->tranceive(buf, buf, 1) >= 0;
     if (ok) {
@@ -124,10 +124,10 @@ bool Tag::select() {
 
 bool Tag::halt() {
     unsigned char buf[4] = { HLT_A, 0, 0, 0 };
-    reader->turnOffEncryption();
-    setState(HALT);
+    reader->stopCrypto();
     reader->calculateCrc(buf, 2, &buf[2]);
     reader->tranceive(buf, buf, 4);
+    setState(HALT);
 
     // If the PICC responds with any modulation during a period of 1 ms after the end of the frame containing the
     // HLTA command, this response shall be interpreted as 'not acknowledge'.
@@ -205,7 +205,6 @@ bool Tag::writeBlockSlice(unsigned char address, unsigned char from, unsigned ch
 }
 
 int Tag::readByte(unsigned char address, unsigned char pos) {
-
     unsigned char buf[18];
     if (!readBlock(address, buf)) {
         return -1;
@@ -214,7 +213,6 @@ int Tag::readByte(unsigned char address, unsigned char pos) {
 }
 
 bool Tag::writeByte(unsigned char address, unsigned char pos, unsigned char value) {
-
     unsigned char buf[18];
     if (!readBlock(address, buf)) {
         return false;
@@ -244,25 +242,60 @@ bool Tag::setBlockType(unsigned char address, BlockType type) {
     return true;
 }
 
-bool Tag::readAccessBits(unsigned char sector, unsigned char *buf) {
-    return readBlockSlice(getSectorTrailerAddress(sector), 6, 10, buf);
+bool Tag::readAccessBits(unsigned char sector, unsigned char *accessBits) {
+    return readBlockSlice(getSectorTrailerAddress(sector), TAG_ACCESS_POSITION, TAG_ACCESS_BITS_SIZE, accessBits);
 }
 
-bool Tag::writeAccessBits(unsigned char sector, unsigned char *buf) {
-    return writeBlockSlice(getSectorTrailerAddress(sector), 6, 10, buf);
+bool Tag::writeAccessBits(unsigned char sector, unsigned char *accessBits, unsigned char *keyA, unsigned char *keyB) {
+    unsigned char buf[18];
+    if (!isAccessBitsCorrect(accessBits)) {
+        return false;
+    }
+    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_A)], keyA, TAG_KEY_SIZE);
+    memcpy(&buf[TAG_ACCESS_POSITION], accessBits, TAG_ACCESS_BITS_SIZE);
+    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_B)], keyB, TAG_KEY_SIZE);
+    return writeBlockSlice(getSectorTrailerAddress(sector), 0, TAG_BLOCK_SIZE, buf);
 }
 
-bool Tag::setBlockPermission(unsigned char address, unsigned char permission) {
+bool Tag::setAccessCondition(unsigned char sector, unsigned char block, Access access, unsigned char *keyA, unsigned char *keyB) {
+    unsigned char mask, c1, c2, c3, accessBits[4];
+    if (!readAccessBits(sector, accessBits)) {
+        return false;
+    }
+    mask = 0x01 << (block & 0x03);
+    unpackAccessBits(accessBits, &c1, &c2, &c3);
+    c1 = (c1 & ~mask) | ((access & 0x04) ? mask : 0);
+    c2 = (c2 & ~mask) | ((access & 0x02) ? mask : 0);
+    c3 = (c3 & ~mask) | ((access & 0x01) ? mask : 0);
+    packAccessBits(accessBits, c1, c2, c3);
+    return writeAccessBits(sector, accessBits, keyA, keyB);
+}
+
+bool Tag::getAccessCondition(unsigned char address, Access *access) {
+    unsigned char block, mask, c1, c2, c3, accessBits[4];
+    if (!readAccessBits(addressToSector(address), accessBits)) {
+        return false;
+    }
+    block = addressToBlock(address) & 0x03;
+    mask = 0x01 << (block & 0x03);
+    unpackAccessBits(accessBits, &c1, &c2, &c3);
+    *access = (Access) (((c1 & mask) ? 0x04 : 0 | (c2 & mask) ? 0x02 : 0 | (c3 & mask) ? 0x01 : 0) & 0x07);
     return true;
 }
 
-bool Tag::writeKey(unsigned char sector, KeyType type, unsigned char *key) {
-    unsigned from = TAG_KEY_TO_POS(key);
-    return writeBlockSlice(getSectorTrailerAddress(sector), from, TAG_KEY_SIZE, key);
+bool Tag::writeKey(unsigned char sector, KeyType type, unsigned char *keyA, unsigned char *keyB) {
+    unsigned char buf[18];
+    unsigned address = getSectorTrailerAddress(sector);
+    if (!readBlock(address, buf)) {
+        return false;
+    }
+    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_A)], keyA, TAG_KEY_SIZE);
+    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_B)], keyB, TAG_KEY_SIZE);
+    return writeBlock(address, buf);
 }
 
 bool Tag::readKey(unsigned char sector, KeyType type, unsigned char *key) {
-    unsigned from = TAG_KEY_TO_POS(key);
+    unsigned from = TAG_KEY_TYPE_TO_POS(type);
     return readBlockSlice(getSectorTrailerAddress(sector), from, TAG_KEY_SIZE, key);
 }
 
@@ -275,6 +308,11 @@ unsigned char Tag::computeNvb(unsigned char collisionPos) {
     unsigned char bytes = collisionPos / 8;
     unsigned char bits = collisionPos % 8;
     return (((bytes << 4) & 0xf0) | (bits & 0x0f)) + 0x20;
+}
+
+bool Tag::isAccessBitsCorrect(unsigned char *accessBits) {
+    unsigned char *c = accessBits;
+    return (~(c[1] >> 4) & 0x0f) == (c[0] & 0x0f) && (~(c[2]) & 0x0f) == ((c[0] >> 4) & 0x0f) && (~(c[2] >> 4) & 0x0f) == (c[1] & 0x0f);
 }
 
 void Tag::computeTagType() {
@@ -301,6 +339,18 @@ void Tag::computeTagType() {
     default:
         tagType = MIFARE_UNKNOWN;
     }
+}
+
+void Tag::packAccessBits(unsigned char *accessBits, unsigned char c1, unsigned char c2, unsigned char c3) {
+    accessBits[0] = (~(c2 << 4) & 0xf0) | ((~c1) & 0x0f);
+    accessBits[1] = ((c1 << 4) & 0xf0) | ((~c3) & 0x0f);
+    accessBits[2] = ((c3 << 4) & 0xf0) | (c2 & 0x0f);
+}
+
+void Tag::unpackAccessBits(unsigned char *accessBits, unsigned char *c1, unsigned char *c2, unsigned char *c3) {
+    *c1 = (accessBits[1] >> 4) & 0x0f;
+    *c2 = accessBits[2] & 0x0f;
+    *c3 = (accessBits[2] >> 4) & 0x0f;
 }
 
 void Tag::setSectorTrailerProtected(bool protect) {
