@@ -47,7 +47,7 @@ Fully implemented.
 ## Examples
 
 - ReaderMFR522 Self test.
-```
+``` c++
 #include <Arduino.h>
 #include <RegisterBasedSPIDevice.h>
 #include <ReaderMFRC522.h>
@@ -105,7 +105,7 @@ void loop() {
 
 - ReaderMFRC522 FIFO overflow test.
 
-```
+``` c++
 #include <RegisterBasedSPIDevice.h>
 #include <ReaderMFRC522.h>
 
@@ -171,7 +171,7 @@ void loop() {
 
 - ReaderMFRC522 blink led using timer and interruption.
 
-```
+``` c++
 #include <Arduino.h>
 #include <RegisterBasedSPIDevice.h>
 #include <ReaderMFRC522.h>
@@ -225,7 +225,7 @@ void loop() {
 
 - TagMF1S503x tag detection.
 
-```
+``` c++
 #include <RegisterBasedSPIDevice.h>
 #include <ReaderMFRC522.h>
 #include <MifareClassic.h>
@@ -259,7 +259,7 @@ void loop() {
 
 - TagMF1S503x UID dump.
 
-```
+``` c++
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
 #include <MifareClassic.h>
@@ -300,7 +300,7 @@ void loop() {
 
 - TagMF1S503x dump whole card.
 
-```
+``` c++
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
 #include <MifareClassic.h>
@@ -354,7 +354,7 @@ void loop() {
 
 - TagMF1S503x read a key.
 
-```
+``` c++
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
 #include <MifareClassic.h>
