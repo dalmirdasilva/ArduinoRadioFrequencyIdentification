@@ -24,6 +24,7 @@ Not implemented yet.
 ### Tags
 
 - MifareClassic
+
 Fully implemented.
 
 - MifareUltralight
@@ -31,10 +32,13 @@ Fully implemented.
 Not implemented yet.
 
 - TagMF0ICU1
+
 Not implemented yet.
 
 - TagMF1ICS70
+
 Fully implemented.
 
 - TagMF1S503x
+
 Fully implemented.
