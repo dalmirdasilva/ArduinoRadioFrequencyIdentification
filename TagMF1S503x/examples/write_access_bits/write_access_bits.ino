@@ -1,5 +1,6 @@
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
+#include <MifareClassic.h>
 #include <TagMF1S503x.h>
 
 #define SS_PIN              10
@@ -26,7 +27,7 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Initializing...");
     reader.initialize();
-    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
+    tag.setupAuthenticationKey(MifareClassic::KEY_A, keyA);
 
     Serial.println("Are you sure you want to write access bits into the trailer sector?\n"
             "With wrong permission, it will lockout the block of the card forever!\n\n"

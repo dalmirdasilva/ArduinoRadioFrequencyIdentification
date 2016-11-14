@@ -1,5 +1,6 @@
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
+#include <MifareClassic.h>
 #include <TagMF1S503x.h>
 
 #define SS_PIN          10
@@ -13,14 +14,14 @@ ReaderMFRC522 reader(&device, RST_PIN);
 TagMF1S503x tag(&reader);
 
 unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-unsigned char newKey[KEY_SIZE] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
+unsigned char newKeyB[KEY_SIZE] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
 unsigned char ok = 'n';
 
 void setup() {
     Serial.begin(9600);
     Serial.println("Initializing...");
     reader.initialize();
-    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
+    tag.setupAuthenticationKey(MifareClassic::KEY_A, keyA);
 
     Serial.println("Are you sure you want to write the key?\n"
             "With wrong permission it will destroy the block of the card forever!\n\n"
@@ -40,7 +41,7 @@ void loop() {
     if (ok == 'y' && tag.activate()) {
         Serial.println("Card detected.");
         Serial.println("Writing key...");
-        if (tag.writeKey(SECTOR, Tag::KEY_B, keyA, newKey)) {
+        if (tag.writeKey(SECTOR, MifareClassic::KEY_B, keyA, newKeyB)) {
             Serial.println("Key wrote successfully!");
         } else {
             Serial.println("Error when writing key!");

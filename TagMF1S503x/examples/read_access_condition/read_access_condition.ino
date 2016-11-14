@@ -1,5 +1,6 @@
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
+#include <MifareClassic.h>
 #include <TagMF1S503x.h>
 
 #define SS_PIN              10
@@ -19,13 +20,13 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Initializing...");
     reader.initialize();
-    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
+    tag.setupAuthenticationKey(MifareClassic::KEY_A, keyA);
     Serial.println("Waiting card proximity...");
 }
 
 void loop() {
     if (tag.activate()) {
-        Tag::Access access;
+        MifareClassic::Access access;
         Serial.println("Card detected.");
         if (tag.getAccessCondition(ADDRESS, &access)) {
             Serial.print("Access conditions is: ");

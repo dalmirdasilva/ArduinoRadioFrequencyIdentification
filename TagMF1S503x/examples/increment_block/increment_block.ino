@@ -1,5 +1,6 @@
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
+#include <MifareClassic.h>
 #include <TagMF1S503x.h>
 
 #define SS_PIN              10
@@ -7,7 +8,7 @@
 #define KEY_SIZE            6
 
 #define ADDRESS             20
-#define DELTA               0x3ff
+#define DELTA               1
 
 RegisterBasedSPIDevice device(SS_PIN);
 ReaderMFRC522 reader(&device, RST_PIN);
@@ -19,7 +20,7 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Initializing...");
     reader.initialize();
-    tag.setupAuthenticationKey(Tag::KEY_B, keyB);
+    tag.setupAuthenticationKey(MifareClassic::KEY_B, keyB);
     Serial.println("Waiting card proximity...");
 }
 

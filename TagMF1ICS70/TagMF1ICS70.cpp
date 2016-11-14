@@ -46,8 +46,8 @@ unsigned char TagMF1ICS70::addressToBlock(unsigned char address) {
     if (address >= TAG_MF1ICS70_LOW_BLOCK_COUNT) {
         address -= TAG_MF1ICS70_LOW_BLOCK_COUNT;
 
-        // For the first 32 sectors (first 2 Kbytes of NV-memory) the access conditions can be set individually for a data area sized one block.
-        // For the last 8 sectors (upper 2 Kbytes of NV-memory) access conditions can be set individually for a data area sized 5 blocks.
+        // For the first 32 sectors (first 2K bytes of NV-memory) the access conditions can be set individually for a data area sized one block.
+        // For the last 8 sectors (upper 2K bytes of NV-memory) access conditions can be set individually for a data area sized 5 blocks.
         block = (address % TAG_MF1ICS70_HIGH_SECTOR_COUNT) / 5;
     }
     return block;

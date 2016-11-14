@@ -1,5 +1,6 @@
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
+#include <MifareClassic.h>
 #include <TagMF1S503x.h>
 
 #define SS_PIN              10
@@ -21,7 +22,7 @@ void setup() {
     Serial.begin(9600);
     Serial.println("Initializing...");
     reader.initialize();
-    tag.setupAuthenticationKey(Tag::KEY_A, keyA);
+    tag.setupAuthenticationKey(MifareClassic::KEY_A, keyA);
     tag.setSectorTrailerProtected(false);
     Serial.println("Waiting card proximity...");
 }
@@ -29,13 +30,13 @@ void setup() {
 void loop() {
     if (tag.activate()) {
         Serial.println("Card detected.");
-        if (!tag.setAccessCondition(SECTOR, 3, Tag::CONDITION_3, keyA, keyB)) {
+        if (!tag.setAccessCondition(SECTOR, 3, MifareClassic::CONDITION_3, keyA, keyB)) {
             Serial.print("Cannot set access condition for sector trailer.");
             delay(1000);
             return;
         }
-        tag.setupAuthenticationKey(Tag::KEY_B, keyB);
-        if (!tag.setAccessCondition(5, 0, Tag::CONDITION_6, keyA, keyB)) {
+        tag.setupAuthenticationKey(MifareClassic::KEY_B, keyB);
+        if (!tag.setAccessCondition(5, 0, MifareClassic::CONDITION_6, keyA, keyB)) {
             Serial.print("Cannot set access condition for block.");
             delay(1000);
             return;
