@@ -2,14 +2,14 @@
 #include <Reader.h>
 
 TagMF1S503x::TagMF1S503x(Reader *reader)
-        : Tag(reader) {
+        : TagMifareClassic(reader) {
 }
 
 bool TagMF1S503x::writeBlock(unsigned char address, unsigned char *buf) {
-    if (getTagType() != MIFARE_1K) {
+    if (getTagType() != Tag::MIFARE_1K) {
         return false;
     }
-    return Tag::writeBlock(address, buf);
+    return TagMifareClassic::writeBlock(address, buf);
 }
 
 unsigned int TagMF1S503x::getSize() {

@@ -8,7 +8,7 @@
 #define __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF1ICS70_H__ 1
 
 #include <Reader.h>
-#include <Tag.h>
+#include <TagMifareClassic.h>
 
 // The 4 kByte EEPROM memory is organized in 32 sectors with 4 blocks
 // and in 8 sectors with 16 blocks. One block consists of 16 bytes.
@@ -26,7 +26,7 @@
 #define TAG_MF1ICS70_HIGH_SIZE                      TAG_MF1ICS70_HIGH_SECTOR_COUNT * TAG_MF1ICS70_HIGH_SECTOR_SIZE
 #define TAG_MF1ICS70_SIZE                           TAG_MF1ICS70_LOW_SIZE + TAG_MF1ICS70_HIGH_SIZE
 
-class TagMF1ICS70: public Tag {
+class TagMF1ICS70: public TagMifareClassic {
 
 public:
 

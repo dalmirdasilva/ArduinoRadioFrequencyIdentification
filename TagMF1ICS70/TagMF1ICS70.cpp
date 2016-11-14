@@ -2,14 +2,14 @@
 #include <Reader.h>
 
 TagMF1ICS70::TagMF1ICS70(Reader *reader)
-        : Tag(reader) {
+        : TagMifareClassic(reader) {
 }
 
 bool TagMF1ICS70::writeBlock(unsigned char address, unsigned char *buf) {
-    if (getTagType() != MIFARE_4K) {
+    if (getTagType() != Tag::MIFARE_4K) {
         return false;
     }
-    return Tag::writeBlock(address, buf);
+    return TagMifareClassic::writeBlock(address, buf);
 }
 
 unsigned int TagMF1ICS70::getSize() {
