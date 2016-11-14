@@ -21,10 +21,7 @@ Not implemented yet.
 
 Not implemented yet.
 
-## Tags
-
-### Readers
-
+### Tags
 
 - MifareClassic
 Fully implemented.
