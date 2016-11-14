@@ -43,27 +43,6 @@ public:
         MIFARE_NOT_COMPLETE = 0xff
     };
 
-    enum KeyType {
-        KEY_A = 0x00,
-        KEY_B = 0x01
-    };
-
-    enum BlockType {
-        DATA_BLOCK = 0x00,
-        VALUE_BLOCK = 0x01,
-    };
-
-    enum Access {
-        CONDITION_0 = 0x00,
-        CONDITION_1 = 0x01,
-        CONDITION_2 = 0x02,
-        CONDITION_3 = 0x03,
-        CONDITION_4 = 0x04,
-        CONDITION_5 = 0x05,
-        CONDITION_6 = 0x06,
-        CONDITION_7 = 0x07
-    };
-
     // All MIFARE Classic commands use the MIFARE Crypto1 and require an authentication.
     enum Command {
 
@@ -125,10 +104,45 @@ public:
 
     virtual ~Tag();
 
+    Uid getUid();
+
+    bool hasAnticollisionSupport();
+
+    TagType getTagType();
+
+    void setState(State state);
+
+    State getState();
+
+    virtual bool detect(unsigned char command);
+
+    virtual bool activate();
+
+    virtual bool activateWakeUp();
+
+    virtual bool request();
+
+    virtual bool wakeUp();
+
+    virtual bool select();
+
+    virtual bool halt();
 
 protected:
 
     Reader *reader;
+
+    TagType tagType;
+
+    Uid uid;
+
+    bool supportsAnticollision;
+
+    State state;
+
+    void computeTagType();
+
+    unsigned char computeNvb(unsigned char collisionPos);
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_H__

@@ -9,7 +9,7 @@
 
 #include <Arduino.h>
 #include <Reader.h>
-#include <TagMifareClassic.h>
+#include <MifareClassic.h>
 
 #define TAG_MF1S503X_SECTOR_COUNT               16
 #define TAG_MF1S503X_BLOCK_SIZE                 16
@@ -19,7 +19,7 @@
 #define TAG_MF1S503X_SECTOR_SIZE                TAG_MF1S503X_BLOCK_SIZE * TAG_MF1S503X_BLOCK_COUNT_IN_SECTOR
 #define TAG_MF1S503X_SIZE                       TAG_MF1S503X_SECTOR_COUNT * TAG_MF1S503X_SECTOR_SIZE
 
-class TagMF1S503x: public TagMifareClassic {
+class TagMF1S503x: public MifareClassic {
 
 public:
 

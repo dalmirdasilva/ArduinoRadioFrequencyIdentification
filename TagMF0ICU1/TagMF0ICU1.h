@@ -8,12 +8,12 @@
 #define __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MF0ICU1_H__ 1
 
 #include <Reader.h>
-#include <Tag.h>
+#include <MifareUltralight.h>
 
 /**
- * MIFARE Classic 1K
+ * MIFARE Ultralight tag.
  */
-class TagMF0ICU1: public Tag {
+class TagMF0ICU1: public MifareUltralight {
 
 public:
 
