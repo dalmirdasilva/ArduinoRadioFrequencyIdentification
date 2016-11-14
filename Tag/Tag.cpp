@@ -194,10 +194,10 @@ bool Tag::readBlockSlice(unsigned char address, unsigned char from, unsigned cha
 
 bool Tag::writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf) {
     unsigned char receive[18];
-    if (len == 0 || from + len > 16) {
+    if (len == 0 || from + len > TAG_BLOCK_SIZE) {
         return false;
     }
-    if (!readBlock(address, receive)) {
+    if (from == 0 && len == TAG_BLOCK_SIZE && !readBlock(address, receive)) {
         return false;
     }
     memcpy(&receive[from], buf, len);
@@ -221,25 +221,56 @@ bool Tag::writeByte(unsigned char address, unsigned char pos, unsigned char valu
     return writeBlock(address, buf);
 }
 
-bool Tag::decrement() {
-    return true;
+bool Tag::increment(unsigned char address, uint32_t delta) {
+    return arithmeticOperation(INCREMENT, address, delta);
 }
 
-bool Tag::increment() {
-    return true;
+bool Tag::decrement(unsigned char address, uint32_t delta) {
+    return arithmeticOperation(DECREMENT, address, delta);
 }
 
-bool Tag::restore() {
-    return true;
+bool Tag::restore(unsigned char address) {
+    return arithmeticOperation(RESTORE, address, 0);
 }
 
-bool Tag::transfer() {
-    return true;
+bool Tag::arithmeticOperation(unsigned char operation, unsigned char address, uint32_t delta) {
+    unsigned char cmd[6];
+    if (key != NULL && !authenticate(address, keyType, key)) {
+        return false;
+    }
+    cmd[0] = operation;
+    cmd[1] = address;
+    reader->calculateCrc(cmd, 2, &cmd[2]);
+    reader->tranceive(cmd, cmd, 4);
+    if (reader->getLastError() == Reader::NACK) {
+        return false;
+    }
+    memcpy(&cmd[0], &delta, 4);
+    reader->calculateCrc(cmd, 4, &cmd[4]);
+    reader->tranceive(cmd, cmd, 6);
+    return reader->getLastError() != Reader::NACK;
 }
 
-bool Tag::setBlockType(unsigned char address, BlockType type) {
+bool Tag::transfer(unsigned char address) {
+    unsigned char cmd[4];
+    if (key != NULL && !authenticate(address, keyType, key)) {
+        return false;
+    }
+    cmd[0] = TRANSFER;
+    cmd[1] = address;
+    reader->calculateCrc(cmd, 2, &cmd[2]);
+    reader->tranceive(cmd, cmd, 4);
+    return reader->getLastError() == Reader::NO_ERROR;
+}
 
-    return true;
+bool Tag::createValueBlock(unsigned char address, uint32_t value, uint8_t addr) {
+    Access access;
+    unsigned char buf[18];
+    if (!getAccessCondition(address, &access) || (access != CONDITION_1 && access != CONDITION_6)) {
+        return false;
+    }
+    fillValueBlock(buf, value, addr);
+    return writeBlock(address, buf);
 }
 
 bool Tag::readAccessBits(unsigned char sector, unsigned char *accessBits) {
@@ -277,9 +308,9 @@ bool Tag::getAccessCondition(unsigned char address, Access *access) {
         return false;
     }
     block = addressToBlock(address) & 0x03;
-    mask = 0x01 << (block & 0x03);
+    mask = 0x01 << block;
     unpackAccessBits(accessBits, &c1, &c2, &c3);
-    *access = (Access) (((c1 & mask) ? 0x04 : 0 | (c2 & mask) ? 0x02 : 0 | (c3 & mask) ? 0x01 : 0) & 0x07);
+    *access = (Access) ((((c1 & mask) ? 0x04 : 0) | ((c2 & mask) ? 0x02 : 0) | ((c3 & mask) ? 0x01 : 0)) & 0x07);
     return true;
 }
 
@@ -351,6 +382,17 @@ void Tag::unpackAccessBits(unsigned char *accessBits, unsigned char *c1, unsigne
     *c1 = (accessBits[1] >> 4) & 0x0f;
     *c2 = accessBits[2] & 0x0f;
     *c3 = (accessBits[2] >> 4) & 0x0f;
+}
+
+void Tag::fillValueBlock(unsigned char *buf, uint32_t value, uint8_t addr) {
+    memcpy(&buf[0], &value, 4);
+    memcpy(&buf[8], &value, 4);
+    value = ~value;
+    memcpy(&buf[4], &value, 4);
+    buf[12] = addr;
+    buf[13] = ~addr;
+    buf[14] = addr;
+    buf[15] = ~addr;
 }
 
 void Tag::setSectorTrailerProtected(bool protect) {

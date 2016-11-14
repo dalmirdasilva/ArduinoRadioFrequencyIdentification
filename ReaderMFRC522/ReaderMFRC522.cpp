@@ -307,6 +307,7 @@ inline bool ReaderMFRC522::waitForRegisterBits(unsigned char reg, unsigned char 
 }
 
 bool ReaderMFRC522::performSelfTest() {
+#ifdef ENABLE_SELF_TEST
     unsigned char *firmwareReference;
     unsigned char buffer[64] = { 0 };
     writeRegister(AUTO_TEST, 0x00);
@@ -340,6 +341,7 @@ bool ReaderMFRC522::performSelfTest() {
             return false;
         }
     }
+#endif
     return true;
 }
 

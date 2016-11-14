@@ -11,7 +11,13 @@
 #include <Reader.h>
 #include <Tag.h>
 
-#define TAG_MF1S503X_SECTOR_SIZE    4
+#define TAG_MF1S503X_SECTOR_COUNT               16
+#define TAG_MF1S503X_BLOCK_SIZE                 16
+#define TAG_MF1S503X_BLOCK_COUNT_IN_SECTOR      4
+
+#define TAG_MF1S503X_BLOCK_COUNT                TAG_MF1S503X_SECTOR_COUNT * TAG_MF1S503X_BLOCK_COUNT_IN_SECTOR
+#define TAG_MF1S503X_SECTOR_SIZE                TAG_MF1S503X_BLOCK_SIZE * TAG_MF1S503X_BLOCK_COUNT_IN_SECTOR
+#define TAG_MF1S503X_SIZE                       TAG_MF1S503X_SECTOR_COUNT * TAG_MF1S503X_SECTOR_SIZE
 
 class TagMF1S503x: public Tag {
 
@@ -21,7 +27,15 @@ public:
 
     bool writeBlock(unsigned char address, unsigned char *buf);
 
-    unsigned char getSectorSize(unsigned char sector);
+    unsigned int getSize();
+
+    unsigned char getSectorCount();
+
+    unsigned int getBlockCount();
+
+    unsigned char getBlockCountInSector(unsigned char sector);
+
+    unsigned int getSectorSize(unsigned char sector);
 
     unsigned char isAddressSectorTrailer(unsigned char address);
 

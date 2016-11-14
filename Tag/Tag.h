@@ -8,6 +8,7 @@
 #define __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_H__ 1
 
 #include <Reader.h>
+#include <stdint.h>
 
 #define TAG_SAK_BIT                             0x20
 #define TAG_ATQA_ANTICOLLISION_BIT              0x04
@@ -134,6 +135,14 @@ public:
 
     State getState();
 
+    virtual unsigned int getSize() = 0;
+
+    virtual unsigned char getSectorCount() = 0;
+
+    virtual unsigned int getBlockCount() = 0;
+
+    virtual unsigned char getBlockCountInSector(unsigned char sector) = 0;
+
     virtual bool detect(unsigned char command);
 
     /**
@@ -176,15 +185,21 @@ public:
 
     virtual bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
 
-    virtual bool decrement();
+    /**
+     * Remark: The MIFARE Increment, Decrement, and Restore command part 2 does not
+     * provide an acknowledgement, so the regular time-out has to be used instead.
+     */
+    virtual bool increment(unsigned char address, uint32_t delta);
 
-    virtual bool increment();
+    virtual bool decrement(unsigned char address, uint32_t delta);
 
-    virtual bool restore();
+    virtual bool restore(unsigned char address);
 
-    virtual bool transfer();
+    virtual bool arithmeticOperation(unsigned char operation, unsigned char address, uint32_t delta);
 
-    virtual bool setBlockType(unsigned char address, BlockType type);
+    virtual bool transfer(unsigned char address);
+
+    virtual bool createValueBlock(unsigned char address, uint32_t value, uint8_t addr);
 
     virtual bool readAccessBits(unsigned char sector, unsigned char *accessBits);
 
@@ -193,6 +208,9 @@ public:
     /**
      * For the first 32 sectors (first 2 Kbytes of NV-memory) the access conditions can be set individually for a data area sized one block.
      * For the last 8 sectors (upper 2 Kbytes of NV-memory) access conditions can be set individually for a data area sized 5 blocks.
+     *
+     * BE CAREFUL WHEN CHANGING ACCESS BITS, EXPECIALLY THE PERMISSIONS TO THE SECTOR 3 (trailer sector), SINCE THE ACCESS BITS THEMSELVES CAN ALSO BE BLOCKED.
+     * THERE ONLY 3 PERMISSIONS THAT ALLOW FURTHER CHANGES ON ACCESS BITS: CONDITION_1, CONDITION_3 AND CONDITION_4; EVERY OTHER BLOCKS THEM FOREVER.
      */
     virtual bool setAccessCondition(unsigned char sector, unsigned char block, Access access, unsigned char *keyA, unsigned char *keyB);
 
@@ -216,6 +234,16 @@ public:
 
     virtual void unpackAccessBits(unsigned char *accessBits, unsigned char *c1, unsigned char *c2, unsigned char *c3);
 
+    virtual unsigned int getSectorSize(unsigned char sector) = 0;
+
+    virtual unsigned char isAddressSectorTrailer(unsigned char address) = 0;
+
+    virtual unsigned char addressToSector(unsigned char address) = 0;
+
+    virtual unsigned char addressToBlock(unsigned char address) = 0;
+
+    virtual unsigned char getSectorTrailerAddress(unsigned char sector) = 0;
+
 protected:
 
     Reader *reader;
@@ -236,17 +264,9 @@ protected:
 
     unsigned char computeNvb(unsigned char collisionPos);
 
-    virtual unsigned char getSectorSize(unsigned char sector) = 0;
-
-    virtual unsigned char isAddressSectorTrailer(unsigned char address) = 0;
-
-    virtual unsigned char addressToSector(unsigned char address) = 0;
-
-    virtual unsigned char addressToBlock(unsigned char address) = 0;
-
-    virtual unsigned char getSectorTrailerAddress(unsigned char sector) = 0;
-
     void computeTagType();
+
+    void fillValueBlock(unsigned char *buf, uint32_t value, uint8_t addr);
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_H__

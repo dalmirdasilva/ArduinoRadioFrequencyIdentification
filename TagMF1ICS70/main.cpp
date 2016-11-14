@@ -5,21 +5,67 @@ int main() {
 
     TagMF1ICS70 tag;
 
+    // getSize
+
+    if (tag.getSize() !=  4096) {
+        printf("error in getSize#0\n");
+    }
+
+    // getSectorCount
+
+    if (tag.getSectorCount() != 40) {
+        printf("error in getSectorCount#0\n");
+    }
+
+    // getBlockCount
+
+    if (tag.getBlockCount() != 256) {
+        printf("error in getBlockCount#0\n");
+    }
+
+    // getBlockCountInSector
+
+    if (tag.getBlockCountInSector(0) != 4) {
+        printf("error in getBlockCountInSector#0\n");
+    }
+
+    if (tag.getBlockCountInSector(32) != 16) {
+        printf("error in getBlockCountInSector#1\n");
+    }
+
+    // getBlockCountInSector
+
+    if (tag.getBlockCountInSector(0) != 4) {
+        printf("error in getBlockCountInSector#0\n");
+    }
+
+    if (tag.getBlockCountInSector(31) != 4) {
+        printf("error in getBlockCountInSector#1\n");
+    }
+
+    if (tag.getBlockCountInSector(32) != 16) {
+        printf("error in getBlockCountInSector#2\n");
+    }
+
+    if (tag.getBlockCountInSector(40) != 16) {
+        printf("error in getBlockCountInSector#3\n");
+    }
+
     // getSectorSize
 
-    if (tag.getSectorSize(0) != 4) {
+    if (tag.getSectorSize(0) != 4*16) {
         printf("error in getSectorSize#0\n");
     }
 
-    if (tag.getSectorSize(31) != 4) {
+    if (tag.getSectorSize(31) != 4*16) {
         printf("error in getSectorSize#1\n");
     }
 
-    if (tag.getSectorSize(32) != 16) {
+    if (tag.getSectorSize(32) != 16*16) {
         printf("error in getSectorSize#2\n");
     }
 
-    if (tag.getSectorSize(40) != 16) {
+    if (tag.getSectorSize(40) != 16*16) {
         printf("error in getSectorSize#3\n");
     }
 
