@@ -161,15 +161,13 @@ bool Tag::readBlock(unsigned char address, unsigned char *buf) {
 }
 
 bool Tag::writeBlock(unsigned char address, unsigned char *buf) {
-    unsigned char cmd[4];
+    unsigned char cmd[4] = { WRITE, address, 0, 0 };
     if (isAddressSectorTrailer(address) && sectorTrailerProtected) {
         return false;
     }
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
-    cmd[0] = WRITE;
-    cmd[1] = address;
     reader->calculateCrc(cmd, 2, &cmd[2]);
     reader->tranceive(cmd, cmd, 4);
     if (reader->getLastError() == Reader::NACK) {
@@ -234,12 +232,10 @@ bool Tag::restore(unsigned char address) {
 }
 
 bool Tag::arithmeticOperation(unsigned char operation, unsigned char address, uint32_t delta) {
-    unsigned char cmd[6];
+    unsigned char cmd[6] = { operation, address, 0, 0, 0, 0 };
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
-    cmd[0] = operation;
-    cmd[1] = address;
     reader->calculateCrc(cmd, 2, &cmd[2]);
     reader->tranceive(cmd, cmd, 4);
     if (reader->getLastError() == Reader::NACK) {
@@ -252,12 +248,10 @@ bool Tag::arithmeticOperation(unsigned char operation, unsigned char address, ui
 }
 
 bool Tag::transfer(unsigned char address) {
-    unsigned char cmd[4];
+    unsigned char cmd[4] = { TRANSFER, address, 0, 0 };
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
-    cmd[0] = TRANSFER;
-    cmd[1] = address;
     reader->calculateCrc(cmd, 2, &cmd[2]);
     reader->tranceive(cmd, cmd, 4);
     return reader->getLastError() == Reader::NO_ERROR;
