@@ -13,7 +13,7 @@ bool MifareClassic::authenticate(unsigned char address, KeyType type, unsigned c
     }
     buf[0] = (type == KEY_A) ? AUTH_KEY_A : AUTH_KEY_B;
     buf[1] = address;
-    for (unsigned char i = 0; i < TAG_KEY_SIZE; i++) {
+    for (unsigned char i = 0; i < MIFARE_CLASSIC_KEY_SIZE; i++) {
         buf[2 + i] = key[i];
     }
     for (unsigned char i = 0; i < 4; i++) {
@@ -64,10 +64,10 @@ bool MifareClassic::readBlockSlice(unsigned char address, unsigned char from, un
 
 bool MifareClassic::writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf) {
     unsigned char receive[18];
-    if (len == 0 || from + len > TAG_BLOCK_SIZE) {
+    if (len == 0 || from + len > MIFARE_CLASSIC_BLOCK_SIZE) {
         return false;
     }
-    if (from == 0 && len == TAG_BLOCK_SIZE && !readBlock(address, receive)) {
+    if (from == 0 && len == MIFARE_CLASSIC_BLOCK_SIZE && !readBlock(address, receive)) {
         return false;
     }
     memcpy(&receive[from], buf, len);
@@ -140,7 +140,7 @@ bool MifareClassic::createValueBlock(unsigned char address, uint32_t value, uint
 }
 
 bool MifareClassic::readAccessBits(unsigned char sector, unsigned char *accessBits) {
-    return readBlockSlice(getSectorTrailerAddress(sector), TAG_ACCESS_POSITION, TAG_ACCESS_BITS_SIZE, accessBits);
+    return readBlockSlice(getSectorTrailerAddress(sector), MIFARE_CLASSIC_ACCESS_POSITION, MIFARE_CLASSIC_ACCESS_BITS_SIZE, accessBits);
 }
 
 bool MifareClassic::writeAccessBits(unsigned char sector, unsigned char *accessBits, unsigned char *keyA, unsigned char *keyB) {
@@ -148,10 +148,10 @@ bool MifareClassic::writeAccessBits(unsigned char sector, unsigned char *accessB
     if (!isAccessBitsCorrect(accessBits)) {
         return false;
     }
-    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_A)], keyA, TAG_KEY_SIZE);
-    memcpy(&buf[TAG_ACCESS_POSITION], accessBits, TAG_ACCESS_BITS_SIZE);
-    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_B)], keyB, TAG_KEY_SIZE);
-    return writeBlockSlice(getSectorTrailerAddress(sector), 0, TAG_BLOCK_SIZE, buf);
+    memcpy(&buf[MIFARE_CLASSIC_KEY_TYPE_TO_POS(KEY_A)], keyA, MIFARE_CLASSIC_KEY_SIZE);
+    memcpy(&buf[MIFARE_CLASSIC_ACCESS_POSITION], accessBits, MIFARE_CLASSIC_ACCESS_BITS_SIZE);
+    memcpy(&buf[MIFARE_CLASSIC_KEY_TYPE_TO_POS(KEY_B)], keyB, MIFARE_CLASSIC_KEY_SIZE);
+    return writeBlockSlice(getSectorTrailerAddress(sector), 0, MIFARE_CLASSIC_BLOCK_SIZE, buf);
 }
 
 bool MifareClassic::setAccessCondition(unsigned char sector, unsigned char block, Access access, unsigned char *keyA, unsigned char *keyB) {
@@ -186,14 +186,14 @@ bool MifareClassic::writeKey(unsigned char sector, KeyType type, unsigned char *
     if (!readBlock(address, buf)) {
         return false;
     }
-    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_A)], keyA, TAG_KEY_SIZE);
-    memcpy(&buf[TAG_KEY_TYPE_TO_POS(KEY_B)], keyB, TAG_KEY_SIZE);
+    memcpy(&buf[MIFARE_CLASSIC_KEY_TYPE_TO_POS(KEY_A)], keyA, MIFARE_CLASSIC_KEY_SIZE);
+    memcpy(&buf[MIFARE_CLASSIC_KEY_TYPE_TO_POS(KEY_B)], keyB, MIFARE_CLASSIC_KEY_SIZE);
     return writeBlock(address, buf);
 }
 
 bool MifareClassic::readKey(unsigned char sector, KeyType type, unsigned char *key) {
-    unsigned from = TAG_KEY_TYPE_TO_POS(type);
-    return readBlockSlice(getSectorTrailerAddress(sector), from, TAG_KEY_SIZE, key);
+    unsigned from = MIFARE_CLASSIC_KEY_TYPE_TO_POS(type);
+    return readBlockSlice(getSectorTrailerAddress(sector), from, MIFARE_CLASSIC_KEY_SIZE, key);
 }
 
 void MifareClassic::setupAuthenticationKey(KeyType keyType, unsigned char *key) {
@@ -218,6 +218,10 @@ void MifareClassic::unpackAccessBits(unsigned char *accessBits, unsigned char *c
     *c3 = (accessBits[2] >> 4) & 0x0f;
 }
 
+void MifareClassic::setSectorTrailerProtected(bool protect) {
+    sectorTrailerProtected = protect;
+}
+
 void MifareClassic::fillValueBlock(unsigned char *buf, uint32_t value, uint8_t addr) {
     memcpy(&buf[0], &value, 4);
     memcpy(&buf[8], &value, 4);
@@ -227,8 +231,4 @@ void MifareClassic::fillValueBlock(unsigned char *buf, uint32_t value, uint8_t a
     buf[13] = ~addr;
     buf[14] = addr;
     buf[15] = ~addr;
-}
-
-void MifareClassic::setSectorTrailerProtected(bool protect) {
-    sectorTrailerProtected = protect;
 }

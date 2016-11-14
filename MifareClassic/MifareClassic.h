@@ -11,6 +11,13 @@
 #include <Reader.h>
 #include <Tag.h>
 
+#define MIFARE_CLASSIC_BLOCK_SIZE                          0x10
+#define MIFARE_CLASSIC_KEY_SIZE                            0x06
+#define MIFARE_CLASSIC_ACCESS_BITS_SIZE                    0x04
+#define MIFARE_CLASSIC_ACCESS_POSITION                     0x06
+
+#define MIFARE_CLASSIC_KEY_TYPE_TO_POS(type)               (((type) == KEY_A) ? 0 : 10)
+
 class MifareClassic: public Tag {
 
 public:
@@ -44,39 +51,39 @@ public:
      * waits for the card's answer. This function is calling compatible with authentication functions former
      * reader IC's. The keys are stored by the microcontroller, which should be capable for the key management.
      */
-    virtual bool authenticate(unsigned char address, KeyType type, unsigned char *key);
+    bool authenticate(unsigned char address, KeyType type, unsigned char *key);
 
-    virtual bool readBlock(unsigned char address, unsigned char *buf);
+    bool readBlock(unsigned char address, unsigned char *buf);
 
-    virtual bool writeBlock(unsigned char address, unsigned char *buf);
+    bool writeBlock(unsigned char address, unsigned char *buf);
 
-    virtual bool readBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
+    bool readBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
 
-    virtual bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
+    bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
 
-    virtual int readByte(unsigned char address, unsigned char pos);
+    int readByte(unsigned char address, unsigned char pos);
 
-    virtual bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
+    bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
 
     /**
      * Remark: The MIFARE Increment, Decrement, and Restore command part 2 does not
      * provide an acknowledgement, so the regular time-out has to be used instead.
      */
-    virtual bool increment(unsigned char address, uint32_t delta);
+    bool increment(unsigned char address, uint32_t delta);
 
-    virtual bool decrement(unsigned char address, uint32_t delta);
+    bool decrement(unsigned char address, uint32_t delta);
 
-    virtual bool restore(unsigned char address);
+    bool restore(unsigned char address);
 
-    virtual bool arithmeticOperation(unsigned char operation, unsigned char address, uint32_t delta);
+    bool arithmeticOperation(unsigned char operation, unsigned char address, uint32_t delta);
 
-    virtual bool transfer(unsigned char address);
+    bool transfer(unsigned char address);
 
-    virtual bool createValueBlock(unsigned char address, uint32_t value, uint8_t addr);
+    bool createValueBlock(unsigned char address, uint32_t value, uint8_t addr);
 
-    virtual bool readAccessBits(unsigned char sector, unsigned char *accessBits);
+    bool readAccessBits(unsigned char sector, unsigned char *accessBits);
 
-    virtual bool writeAccessBits(unsigned char sector, unsigned char *accessBits, unsigned char *keyA, unsigned char *keyB);
+    bool writeAccessBits(unsigned char sector, unsigned char *accessBits, unsigned char *keyA, unsigned char *keyB);
 
     /**
      * For the first 32 sectors (first 2K bytes of NV-memory) the access conditions can be set individually for a data area sized one block.
@@ -85,29 +92,27 @@ public:
      * BE CAREFUL WHEN CHANGING ACCESS BITS, EXPECIALLY THE PERMISSIONS TO THE SECTOR 3 (trailer sector), SINCE THE ACCESS BITS THEMSELVES CAN ALSO BE BLOCKED.
      * THERE ONLY 3 PERMISSIONS THAT ALLOW FURTHER CHANGES ON ACCESS BITS: CONDITION_1, CONDITION_3 AND CONDITION_4; EVERY OTHER BLOCKS THEM FOREVER.
      */
-    virtual bool setAccessCondition(unsigned char sector, unsigned char block, Access access, unsigned char *keyA, unsigned char *keyB);
+    bool setAccessCondition(unsigned char sector, unsigned char block, Access access, unsigned char *keyA, unsigned char *keyB);
 
-    virtual bool getAccessCondition(unsigned char address, Access *access);
+    bool getAccessCondition(unsigned char address, Access *access);
 
     /**
      * Remark: With each memory access the internal logic verifies the format of the access conditions.
      * If it detects a format violation the whole sector is irreversible blocked.
      */
-    virtual bool writeKey(unsigned char sector, KeyType type, unsigned char *keyA, unsigned char *keyB);
+    bool writeKey(unsigned char sector, KeyType type, unsigned char *keyA, unsigned char *keyB);
 
-    virtual bool readKey(unsigned char sector, KeyType type, unsigned char *key);
+    bool readKey(unsigned char sector, KeyType type, unsigned char *key);
 
-    virtual void setupAuthenticationKey(KeyType keyType, unsigned char *key);
+    void setupAuthenticationKey(KeyType keyType, unsigned char *key);
 
-    virtual void setSectorTrailerProtected(bool protect);
+    bool isAccessBitsCorrect(unsigned char *accessBits);
 
-    virtual bool isAccessBitsCorrect(unsigned char *accessBits);
+    void packAccessBits(unsigned char *accessBits, unsigned char c1, unsigned char c2, unsigned char c3);
 
-    virtual void packAccessBits(unsigned char *accessBits, unsigned char c1, unsigned char c2, unsigned char c3);
+    void unpackAccessBits(unsigned char *accessBits, unsigned char *c1, unsigned char *c2, unsigned char *c3);
 
-    virtual void unpackAccessBits(unsigned char *accessBits, unsigned char *c1, unsigned char *c2, unsigned char *c3);
-
-
+    void setSectorTrailerProtected(bool protect);
 
     virtual unsigned int getSize() = 0;
 

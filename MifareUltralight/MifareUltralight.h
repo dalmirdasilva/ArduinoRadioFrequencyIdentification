@@ -17,19 +17,19 @@ public:
 
     MifareUltralight(Reader *reader);
 
+    bool readBlock(unsigned char address, unsigned char *buf);
+
+    bool writeBlock(unsigned char address, unsigned char *buf);
+
+    bool readBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
+
+    bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
+
+    int readByte(unsigned char address, unsigned char pos);
+
+    bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
+
     virtual unsigned int getSize() = 0;
-
-    virtual bool readBlock(unsigned char address, unsigned char *buf);
-
-    virtual bool writeBlock(unsigned char address, unsigned char *buf);
-
-    virtual bool readBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
-
-    virtual bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
-
-    virtual int readByte(unsigned char address, unsigned char pos);
-
-    virtual bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MIFARE_ULTRALIGHT_H__

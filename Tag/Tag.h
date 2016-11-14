@@ -13,14 +13,6 @@
 #define TAG_SAK_BIT                             0x20
 #define TAG_ATQA_ANTICOLLISION_BIT              0x04
 
-#define TAG_BLOCK_SIZE                          0x10
-#define TAG_KEY_SIZE                            0x06
-#define TAG_ACCESS_BITS_SIZE                    0x04
-#define TAG_ACCESS_POSITION                     0x06
-#define TAG_DEFAULT_SECTOR_SIZE                 0x04
-
-#define TAG_KEY_TYPE_TO_POS(type)               (((type) == KEY_A) ? 0 : 10)
-
 class Tag {
 
 public:
@@ -114,19 +106,19 @@ public:
 
     State getState();
 
-    virtual bool detect(unsigned char command);
+    bool detect(unsigned char command);
 
-    virtual bool activate();
+    bool activate();
 
-    virtual bool activateWakeUp();
+    bool activateWakeUp();
 
-    virtual bool request();
+    bool request();
 
-    virtual bool wakeUp();
+    bool wakeUp();
 
-    virtual bool select();
+    bool select();
 
-    virtual bool halt();
+    bool halt();
 
 protected:
 
