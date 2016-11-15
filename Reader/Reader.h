@@ -57,9 +57,9 @@ public:
 
     virtual int communicate(unsigned char command, unsigned char *send, unsigned char *receive, unsigned char sendLen) = 0;
 
-    virtual int tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc) = 0;
+    virtual int transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc) = 0;
 
-    virtual int tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen) = 0;
+    virtual int transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen) = 0;
 
     virtual int authenticate(unsigned char *send) = 0;
 

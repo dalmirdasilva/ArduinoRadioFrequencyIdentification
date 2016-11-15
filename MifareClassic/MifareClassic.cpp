@@ -22,8 +22,7 @@ bool MifareClassic::readBlock(unsigned char address, unsigned char *buf) {
     }
     buf[0] = READ;
     buf[1] = address;
-    reader->calculateCrc(buf, 2, &buf[2]);
-    return reader->tranceive(buf, buf, 4, true) == 18;
+    return transceive(buf, buf, 2, true) == 18;
 }
 
 bool MifareClassic::writeBlock(unsigned char address, unsigned char *buf) {
@@ -34,13 +33,11 @@ bool MifareClassic::writeBlock(unsigned char address, unsigned char *buf) {
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
-    reader->calculateCrc(cmd, 2, &cmd[2]);
-    reader->tranceive(cmd, cmd, 4);
+    transceive(cmd, cmd, 2);
     if (reader->getLastError() == Reader::NACK) {
         return false;
     }
-    reader->calculateCrc(buf, 16, &buf[16]);
-    reader->tranceive(buf, buf, 18);
+    transceive(buf, buf, 16);
     return reader->getLastError() != Reader::NACK;
 }
 
@@ -102,14 +99,12 @@ bool MifareClassic::arithmeticOperation(unsigned char operation, unsigned char a
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
-    reader->calculateCrc(cmd, 2, &cmd[2]);
-    reader->tranceive(cmd, cmd, 4);
+    transceive(cmd, cmd, 2);
     if (reader->getLastError() == Reader::NACK) {
         return false;
     }
     memcpy(&cmd[0], &delta, 4);
-    reader->calculateCrc(cmd, 4, &cmd[4]);
-    reader->tranceive(cmd, cmd, 6);
+    transceive(cmd, cmd, 4);
 
     /**
      * The MIFARE Increment, Decrement, and Restore command part 2 does not
@@ -123,8 +118,7 @@ bool MifareClassic::transfer(unsigned char address) {
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
-    reader->calculateCrc(cmd, 2, &cmd[2]);
-    reader->tranceive(cmd, cmd, 4);
+    transceive(cmd, cmd, 2);
     return reader->getLastError() == Reader::NO_ERROR;
 }
 

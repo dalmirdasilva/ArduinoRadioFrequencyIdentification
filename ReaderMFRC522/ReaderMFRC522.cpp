@@ -24,10 +24,10 @@ void ReaderMFRC522::initialize() {
     clearRegisterBits(AUTO_TEST, AUTO_TEST_ENABLE);
 
     // 100% ASK
-    writeRegister(TX_ASK, 0x40);
+    setRegisterBits(TX_ASK, TX_ASK_FORCE_100_ASK);
 
-    // CRC Initial value 0x6363
-    writeRegister(MODE, 0x3d);
+    // 25ms before timeout, auto start timer at the end of the transmission
+    configureTimer(0xf9, 0x03e8, true, false);
 
     // Open the antenna
     setAntennaOn();
@@ -144,12 +144,12 @@ int ReaderMFRC522::generateRandomId(unsigned char *buf) {
     return readRegisterBlock(FIFO_DATA, buf, 10);
 }
 
-int ReaderMFRC522::tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc) {
+int ReaderMFRC522::transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc) {
     return communicate(TRANSCEIVE, send, receive, sendLen, checkCrc);
 }
 
-inline int ReaderMFRC522::tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen) {
-    return tranceive(send, receive, sendLen, false);
+inline int ReaderMFRC522::transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen) {
+    return transceive(send, receive, sendLen, false);
 }
 
 int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc) {
@@ -160,9 +160,6 @@ int ReaderMFRC522::communicate(unsigned char command, unsigned char *send, unsig
     CONTROLbits control;
 
     lastError = NO_ERROR;
-
-    // 25ms before timeout, auto start timer at the end of the transmission
-    configureTimer(0xf9, 0x03e8, true, false);
 
     // Stop any active command.
     sendCommand(IDLE);

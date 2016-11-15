@@ -134,6 +134,15 @@ public:
 
     bool halt();
 
+    /**
+     * Helper for transceiving data with CRC calculation.
+     *
+     * @param   send            Send buffer needs to have enough room for add the 2-bytes CRC.
+     * @param   receive         Receive buffer.
+     * @param   sendLen         How many bytes we are sending, disregarding the CRC part.
+     */
+    int transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc = false);
+
 protected:
 
     Reader *reader;

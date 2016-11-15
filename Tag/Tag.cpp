@@ -55,7 +55,9 @@ bool Tag::detect(unsigned char command) {
     unsigned char buf[2] = { command, 0x00 };
     reader->stopCrypto();
     reader->setBitFraming(0, 0x07);
-    bool ok = reader->tranceive(buf, buf, 1) >= 0;
+
+    // No need for CRC, transceive directly with reader. Do not use helper.
+    bool ok = reader->transceive(buf, buf, 1) >= 0;
     if (ok) {
         setState(READY);
         supportsAnticollision = buf[0] & TAG_ATQA_ANTICOLLISION_BIT;
@@ -94,7 +96,9 @@ bool Tag::select() {
             send[1] = computeNvb(collisionPosistion);
             memcpy(&send[2], receive, knownBytes);
             reader->setBitFraming(lastBits, lastBits);
-            reader->tranceive(send, receive, knownBytes + 2);
+
+            // No need for CRC, transceive directly with reader. Do not use helper.
+            reader->transceive(send, receive, knownBytes + 2);
             collisionPosistion = 0;
             error = (Reader::Error) reader->getLastError();
             if (error != Reader::NO_ERROR && error != Reader::COLLISION_ERROR) {
@@ -105,11 +109,10 @@ bool Tag::select() {
                 collisionPosistion = reader->getCollisionPosition();
             } else {
 
-                // End of i_nth iteration.
+                // End of i_nth iteration. No collision. 5 bytes received. Need to send 9 bytes including CRC.
                 send[1] = 0x70;
-                memcpy(&send[2], receive, 0x05);
-                reader->calculateCrc(send, 7, &send[7]);
-                reader->tranceive(send, receive, 0x09);
+                memcpy(&send[2], receive, 5);
+                transceive(send, receive, 7);
                 if (reader->getLastError() != Reader::NO_ERROR) {
                     setState(IDLE);
                     return false;
@@ -133,13 +136,17 @@ bool Tag::select() {
 bool Tag::halt() {
     unsigned char buf[4] = { HLT_A, 0, 0, 0 };
     reader->stopCrypto();
-    reader->calculateCrc(buf, 2, &buf[2]);
-    reader->tranceive(buf, buf, 4);
+    transceive(buf, buf, 2);
     setState(HALT);
 
     // If the PICC responds with any modulation during a period of 1 ms after the end of the frame containing the
     // HLTA command, this response shall be interpreted as 'not acknowledge'.
     return reader->getLastError() == Reader::TIMEOUT_ERROR;
+}
+
+int Tag::transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc) {
+    reader->calculateCrc(send, sendLen, &send[sendLen]);
+    return reader->transceive(send, receive, sendLen + 2, checkCrc);
 }
 
 void Tag::computeTagType() {

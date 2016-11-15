@@ -274,7 +274,8 @@ public:
         BIT_FRAMING_START_SEND = 0x80,
         AUTO_TEST_ENABLE = 0x09,
         COLL_VALUES_AFTER_COLL = 0x80,
-        STATUS2_MF_CRYPTO1_ON = 0x08
+        STATUS2_MF_CRYPTO1_ON = 0x08,
+        TX_ASK_FORCE_100_ASK = 0x40
     };
 
     enum Interrupt
@@ -1404,9 +1405,9 @@ public:
      * @param   sendLen       Size of the data to transfer to the FIFO.
      * @param   checkCrc        Boolean flag indicating if it is needed to calculate the CRC of the incoming data.
      */
-    int tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc);
+    int transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen, bool checkCrc);
 
-    inline int tranceive(unsigned char *send, unsigned char *receive, unsigned char sendLen);
+    inline int transceive(unsigned char *send, unsigned char *receive, unsigned char sendLen);
 
     /**
      * Performs the authentication by sending the MF_AUTHENT command to the device.
