@@ -3,7 +3,9 @@
 [Documentation.pdf](Documentation.pdf)
 
 ## Dependency
-This project depends on my other library called: ArduinoDevice (https://github.com/dalmirdasilva/ArduinoDevice). First, you need to clone that repo, go into his folder and execute ```make install```. Installing libraries (On Linux) is basically linking them into ```~/Arduino/libraries```. On Window you will have to copy and past the files to the correct destination - which I don't know! 
+This project depends on my other library called: ArduinoDevice (https://github.com/dalmirdasilva/ArduinoDevice). ArduinoDevice libary implements the communication layer between the Arduino and the Reader. It also has different capabilities to handle different protocols - like I2C and SPI. 
+
+First, you need to clone that repo, then go into its folder and execute ```make install```. Installing libraries (On Linux) is basically linking them into ```~/Arduino/libraries```. On Window you will have to copy and past the files to the correct destination - which I don't know! 
 
 ## Work plan
 
