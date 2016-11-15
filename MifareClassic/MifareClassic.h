@@ -14,6 +14,7 @@
 #define MIFARE_CLASSIC_KEY_SIZE                         6
 #define MIFARE_CLASSIC_ACCESS_BITS_SIZE                 4
 #define MIFARE_CLASSIC_ACCESS_BITS_POSITION             6
+#define MIFARE_CLASSIC_UID_NEED_FOR_AUTH_LEN            4
 
 #define MIFARE_CLASSIC_BLOCK_SIZE                       16
 
@@ -62,8 +63,6 @@ public:
     };
 
     MifareClassic(Reader *reader);
-
-    MifareClassic(Reader *reader, TagType type, TagSize size);
 
     /**
      * This function authenticates one card's sector (according to the block address) using the specified

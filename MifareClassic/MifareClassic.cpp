@@ -5,25 +5,14 @@ MifareClassic::MifareClassic(Reader *reader)
         : Tag(reader), keyType(KEY_A), key(NULL), sectorTrailerProtected(true) {
 }
 
-MifareClassic::MifareClassic(Reader *reader, TagType type, TagSize size)
-        : MifareClassic(reader) {
-    this->type = type;
-    this->size = size;
-}
-
 bool MifareClassic::authenticate(unsigned char address, KeyType type, unsigned char *key) {
-    unsigned char buf[12];
+    unsigned char authWith = (type == KEY_A) ? AUTH_KEY_A : AUTH_KEY_B;
+    unsigned char buf[12] = { authWith, address };
     if (getState() != ACTIVE) {
         return false;
     }
-    buf[0] = (type == KEY_A) ? AUTH_KEY_A : AUTH_KEY_B;
-    buf[1] = address;
-    for (unsigned char i = 0; i < MIFARE_CLASSIC_KEY_SIZE; i++) {
-        buf[2 + i] = key[i];
-    }
-    for (unsigned char i = 0; i < 4; i++) {
-        buf[8 + i] = uid.uid[i];
-    }
+    memcpy(&buf[2], key, MIFARE_CLASSIC_KEY_SIZE);
+    memcpy(&buf[8], uid.uid, MIFARE_CLASSIC_UID_NEED_FOR_AUTH_LEN);
     return reader->authenticate(buf) >= 0;
 }
 
