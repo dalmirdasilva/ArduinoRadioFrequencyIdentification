@@ -11,12 +11,30 @@
 #include <Reader.h>
 #include <Tag.h>
 
-#define MIFARE_CLASSIC_BLOCK_SIZE                          0x10
-#define MIFARE_CLASSIC_KEY_SIZE                            0x06
-#define MIFARE_CLASSIC_ACCESS_BITS_SIZE                    0x04
-#define MIFARE_CLASSIC_ACCESS_POSITION                     0x06
+#define MIFARE_CLASSIC_KEY_SIZE                         6
+#define MIFARE_CLASSIC_ACCESS_BITS_SIZE                 4
+#define MIFARE_CLASSIC_ACCESS_BITS_POSITION             6
 
-#define MIFARE_CLASSIC_KEY_TYPE_TO_POS(type)               (((type) == KEY_A) ? 0 : 10)
+#define MIFARE_CLASSIC_BLOCK_SIZE                       16
+
+#define MIFARE_CLASSIC_LOW_SECTOR_COUNT                 32
+#define MIFARE_CLASSIC_LOW_BLOCK_COUNT_IN_SECTOR        4
+#define MIFARE_CLASSIC_HIGH_SECTOR_COUNT                8
+#define MIFARE_CLASSIC_HIGH_BLOCK_COUNT_IN_SECTOR       16
+
+#define MIFARE_CLASSIC_LOW_BLOCK_COUNT                  MIFARE_CLASSIC_LOW_SECTOR_COUNT * MIFARE_CLASSIC_LOW_BLOCK_COUNT_IN_SECTOR
+
+#define MIFARE_CLASSIC_LOW_SECTOR_SIZE                  MIFARE_CLASSIC_BLOCK_SIZE * MIFARE_CLASSIC_LOW_BLOCK_COUNT_IN_SECTOR
+#define MIFARE_CLASSIC_LOW_SIZE                         MIFARE_CLASSIC_LOW_SECTOR_COUNT * MIFARE_CLASSIC_LOW_SECTOR_SIZE
+#define MIFARE_CLASSIC_HIGH_BLOCK_COUNT                 MIFARE_CLASSIC_HIGH_SECTOR_COUNT * MIFARE_CLASSIC_HIGH_BLOCK_COUNT_IN_SECTOR
+#define MIFARE_CLASSIC_HIGH_SECTOR_SIZE                 MIFARE_CLASSIC_BLOCK_SIZE * MIFARE_CLASSIC_HIGH_BLOCK_COUNT_IN_SECTOR
+#define MIFARE_CLASSIC_HIGH_SIZE                        MIFARE_CLASSIC_HIGH_SECTOR_COUNT * MIFARE_CLASSIC_HIGH_SECTOR_SIZE
+
+#define MIFARE_CLASSIC_MINI_SECTOR_COUT                 5
+#define MIFARE_CLASSIC_MINI_BLOCK_COUNT_IN_SECTOR       4
+#define MIFARE_CLASSIC_MINI_BLOCK_COUNT                 MIFARE_CLASSIC_MINI_SECTOR_COUT * MIFARE_CLASSIC_MINI_BLOCK_COUNT_IN_SECTOR
+
+#define MIFARE_CLASSIC_KEY_TYPE_TO_POS(type)            (((type) == KEY_A) ? 0 : 10)
 
 class MifareClassic: public Tag {
 
@@ -44,6 +62,8 @@ public:
     };
 
     MifareClassic(Reader *reader);
+
+    MifareClassic(Reader *reader, TagType type, TagSize size);
 
     /**
      * This function authenticates one card's sector (according to the block address) using the specified
@@ -114,23 +134,23 @@ public:
 
     void setSectorTrailerProtected(bool protect);
 
-    virtual unsigned int getSize() = 0;
 
-    virtual unsigned char getSectorCount() = 0;
 
-    virtual unsigned int getBlockCount() = 0;
+    unsigned char getSectorCount();
 
-    virtual unsigned char getBlockCountInSector(unsigned char sector) = 0;
+    unsigned int getBlockCount();
 
-    virtual unsigned int getSectorSize(unsigned char sector) = 0;
+    unsigned char getBlockCountInSector(unsigned char sector);
 
-    virtual unsigned char isAddressSectorTrailer(unsigned char address) = 0;
+    unsigned int getSectorSize(unsigned char sector);
 
-    virtual unsigned char addressToSector(unsigned char address) = 0;
+    unsigned char isAddressSectorTrailer(unsigned char address);
 
-    virtual unsigned char addressToBlock(unsigned char address) = 0;
+    unsigned char addressToSector(unsigned char address);
 
-    virtual unsigned char getSectorTrailerAddress(unsigned char sector) = 0;
+    unsigned char addressToBlock(unsigned char address);
+
+    unsigned char getSectorTrailerAddress(unsigned char sector);
 
 protected:
 

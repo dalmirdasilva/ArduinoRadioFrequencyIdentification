@@ -26,13 +26,21 @@ public:
     };
 
     enum TagType {
-        MIFARE_UNKNOWN = 0X00,
-        MIFARE_MINI = 0X01,
-        MIFARE_1K = 0X02,
-        MIFARE_4K = 0X03,
-        MIFARE_UL = 0X04,
-        MIFARE_PLUS = 0x06,
-        MIFARE_NOT_COMPLETE = 0xff
+        TYPE_UNKNOWN = 0x00,
+        TYPE_MINI = 0x01,
+        TYPE_CLASSIC = 0x02,
+        TYPE_PLUS = 0x03,
+        TYPE_ULTRALIGHT = 0x04,
+        TYPE_NOT_COMPLETE = 0xff
+    };
+
+    enum TagSize
+        : unsigned int {
+            SIZE_0 = 0,
+        SIZE_1K = 1024,
+        SIZE_2K = 2048,
+        SIZE_4K = 4096,
+        SIZE_MINI = 320
     };
 
     // All MIFARE Classic commands use the MIFARE Crypto1 and require an authentication.
@@ -94,13 +102,15 @@ public:
 
     Tag(Reader *reader);
 
-    virtual ~Tag();
+    Tag(Reader *reader, TagType type, TagSize size);
 
     Uid getUid();
 
     bool hasAnticollisionSupport();
 
-    TagType getTagType();
+    TagType getType();
+
+    TagSize getSize();
 
     void setState(State state);
 
@@ -124,7 +134,9 @@ protected:
 
     Reader *reader;
 
-    TagType tagType;
+    TagType type;
+
+    TagSize size;
 
     Uid uid;
 

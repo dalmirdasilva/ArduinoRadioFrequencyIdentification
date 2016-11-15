@@ -28,8 +28,6 @@ public:
     int readByte(unsigned char address, unsigned char pos);
 
     bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
-
-    virtual unsigned int getSize() = 0;
 };
 
 #endif // __ARDUINO_RADIO_FREQUENCY_IDENTIFICATION_TAG_MIFARE_ULTRALIGHT_H__

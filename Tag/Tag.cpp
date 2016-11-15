@@ -8,10 +8,7 @@
 #include "Tag.h"
 
 Tag::Tag(Reader *reader)
-        : reader(reader), tagType(MIFARE_UNKNOWN), uid( { 0 }), supportsAnticollision(false), state(POWER_OFF) {
-}
-
-Tag::~Tag() {
+        : reader(reader), type(TYPE_UNKNOWN), size(SIZE_0), uid( { 0 }), supportsAnticollision(false), state(POWER_OFF) {
 }
 
 Tag::Uid Tag::getUid() {
@@ -22,8 +19,12 @@ bool Tag::hasAnticollisionSupport() {
     return supportsAnticollision;
 }
 
-Tag::TagType Tag::getTagType() {
-    return tagType;
+Tag::TagType Tag::getType() {
+    return type;
+}
+
+Tag::TagSize Tag::getSize() {
+    return size;
 }
 
 void Tag::setState(Tag::State state) {
@@ -135,27 +136,34 @@ bool Tag::halt() {
 
 void Tag::computeTagType() {
     switch (uid.sak & 0x7f) {
-    case 0x04:
-        tagType = MIFARE_NOT_COMPLETE;
+    case 0x00:
+        type = TYPE_ULTRALIGHT;
         break;
-    case 0x09:
-        tagType = MIFARE_MINI;
+    case 0x04:
+        type = TYPE_NOT_COMPLETE;
         break;
     case 0x08:
-        tagType = MIFARE_1K;
+        type = TYPE_CLASSIC;
+        size = SIZE_1K;
         break;
-    case 0x18:
-        tagType = MIFARE_4K;
-        break;
-    case 0x00:
-        tagType = MIFARE_UL;
+    case 0x09:
+        type = TYPE_CLASSIC;
+        size = SIZE_MINI;
         break;
     case 0x10:
+        type = TYPE_PLUS;
+        size = SIZE_2K;
+        break;
     case 0x11:
-        tagType = MIFARE_PLUS;
+        type = TYPE_PLUS;
+        size = SIZE_4K;
+        break;
+    case 0x18:
+        type = TYPE_CLASSIC;
+        size = SIZE_4K;
         break;
     default:
-        tagType = MIFARE_UNKNOWN;
+        type = TYPE_UNKNOWN;
     }
 }
 

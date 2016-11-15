@@ -1,9 +1,14 @@
-#include "../MifareClassic/MifareClassic.h"
-
+#include "MifareClassic.h"
 #include <Reader.h>
 
 MifareClassic::MifareClassic(Reader *reader)
         : Tag(reader), keyType(KEY_A), key(NULL), sectorTrailerProtected(true) {
+}
+
+MifareClassic::MifareClassic(Reader *reader, TagType type, TagSize size)
+        : MifareClassic(reader) {
+    this->type = type;
+    this->size = size;
 }
 
 bool MifareClassic::authenticate(unsigned char address, KeyType type, unsigned char *key) {
@@ -140,7 +145,7 @@ bool MifareClassic::createValueBlock(unsigned char address, uint32_t value, uint
 }
 
 bool MifareClassic::readAccessBits(unsigned char sector, unsigned char *accessBits) {
-    return readBlockSlice(getSectorTrailerAddress(sector), MIFARE_CLASSIC_ACCESS_POSITION, MIFARE_CLASSIC_ACCESS_BITS_SIZE, accessBits);
+    return readBlockSlice(getSectorTrailerAddress(sector), MIFARE_CLASSIC_ACCESS_BITS_POSITION, MIFARE_CLASSIC_ACCESS_BITS_SIZE, accessBits);
 }
 
 bool MifareClassic::writeAccessBits(unsigned char sector, unsigned char *accessBits, unsigned char *keyA, unsigned char *keyB) {
@@ -149,7 +154,7 @@ bool MifareClassic::writeAccessBits(unsigned char sector, unsigned char *accessB
         return false;
     }
     memcpy(&buf[MIFARE_CLASSIC_KEY_TYPE_TO_POS(KEY_A)], keyA, MIFARE_CLASSIC_KEY_SIZE);
-    memcpy(&buf[MIFARE_CLASSIC_ACCESS_POSITION], accessBits, MIFARE_CLASSIC_ACCESS_BITS_SIZE);
+    memcpy(&buf[MIFARE_CLASSIC_ACCESS_BITS_POSITION], accessBits, MIFARE_CLASSIC_ACCESS_BITS_SIZE);
     memcpy(&buf[MIFARE_CLASSIC_KEY_TYPE_TO_POS(KEY_B)], keyB, MIFARE_CLASSIC_KEY_SIZE);
     return writeBlockSlice(getSectorTrailerAddress(sector), 0, MIFARE_CLASSIC_BLOCK_SIZE, buf);
 }
@@ -220,6 +225,70 @@ void MifareClassic::unpackAccessBits(unsigned char *accessBits, unsigned char *c
 
 void MifareClassic::setSectorTrailerProtected(bool protect) {
     sectorTrailerProtected = protect;
+}
+
+unsigned char MifareClassic::getSectorCount() {
+    unsigned char sectorCount = MIFARE_CLASSIC_LOW_SECTOR_COUNT;
+    if (size == SIZE_MINI) {
+        sectorCount = MIFARE_CLASSIC_MINI_SECTOR_COUT;
+    } else if (size == SIZE_4K) {
+        sectorCount += MIFARE_CLASSIC_HIGH_SECTOR_COUNT;
+    }
+    return sectorCount;
+}
+
+unsigned int MifareClassic::getBlockCount() {
+    return size / MIFARE_CLASSIC_BLOCK_SIZE;
+}
+
+unsigned char MifareClassic::getBlockCountInSector(unsigned char sector) {
+    return (sector < MIFARE_CLASSIC_LOW_SECTOR_COUNT) ? MIFARE_CLASSIC_LOW_BLOCK_COUNT_IN_SECTOR : MIFARE_CLASSIC_HIGH_BLOCK_COUNT_IN_SECTOR;
+}
+
+unsigned int MifareClassic::getSectorSize(unsigned char sector) {
+    return (sector < MIFARE_CLASSIC_LOW_SECTOR_COUNT) ? MIFARE_CLASSIC_LOW_SECTOR_SIZE : MIFARE_CLASSIC_HIGH_SECTOR_SIZE;
+}
+
+unsigned char MifareClassic::addressToSector(unsigned char address) {
+    unsigned char sector = address / MIFARE_CLASSIC_LOW_BLOCK_COUNT_IN_SECTOR;
+    if (address >= MIFARE_CLASSIC_LOW_BLOCK_COUNT) {
+        address -= MIFARE_CLASSIC_LOW_BLOCK_COUNT;
+        sector = MIFARE_CLASSIC_LOW_SECTOR_COUNT + (address / MIFARE_CLASSIC_HIGH_BLOCK_COUNT_IN_SECTOR);
+    }
+    return sector;
+}
+
+unsigned char MifareClassic::addressToBlock(unsigned char address) {
+    unsigned char block = address % MIFARE_CLASSIC_LOW_SECTOR_COUNT;
+    if (address >= MIFARE_CLASSIC_LOW_BLOCK_COUNT) {
+        address -= MIFARE_CLASSIC_LOW_BLOCK_COUNT;
+
+        // For the first 32 sectors (first 2K bytes of NV-memory) the access conditions can be set individually for a data area sized one block.
+        // For the last 8 sectors (upper 2K bytes of NV-memory) access conditions can be set individually for a data area sized 5 blocks.
+        block = (address % MIFARE_CLASSIC_HIGH_SECTOR_COUNT) / 5;
+    }
+    return block;
+}
+
+unsigned char MifareClassic::isAddressSectorTrailer(unsigned char address) {
+    Serial.println(address);
+    Serial.println(addressToSector(address));
+    Serial.println(getBlockCountInSector(addressToSector(address)));
+    unsigned char blockCount = getBlockCountInSector(addressToSector(address));
+    if (address >= MIFARE_CLASSIC_LOW_BLOCK_COUNT) {
+        address -= MIFARE_CLASSIC_LOW_BLOCK_COUNT;
+    }
+    return ((address % blockCount) == (blockCount - 1));
+}
+
+unsigned char MifareClassic::getSectorTrailerAddress(unsigned char sector) {
+    unsigned char blockCount, offset = 0;
+    blockCount = getBlockCountInSector(sector);
+    if (sector >= MIFARE_CLASSIC_LOW_SECTOR_COUNT) {
+        offset = MIFARE_CLASSIC_LOW_BLOCK_COUNT;
+        sector -= MIFARE_CLASSIC_LOW_SECTOR_COUNT;
+    }
+    return offset + (sector * blockCount) + (blockCount - 1);
 }
 
 void MifareClassic::fillValueBlock(unsigned char *buf, uint32_t value, uint8_t addr) {

@@ -3,7 +3,7 @@
 [Documentation.pdf](Documentation.pdf)
 
 ## Dependency
-This project depends on my other library called: ArduinoDevice (https://github.com/dalmirdasilva/ArduinoDevice). ArduinoDevice libary implements the communication layer between the Arduino and the Reader. It also has different capabilities to handle different protocols - like I2C and SPI. 
+This project depends on my other library called: ArduinoDevice (https://github.com/dalmirdasilva/ArduinoDevice). ArduinoDevice library implements the communication layer between the Arduino and the Reader. It also has different capabilities to handle different protocols - like I2C and SPI. 
 
 First, you need to clone that repo, then go into its folder and execute ```make install```. Installing libraries (On Linux) is basically linking them into ```~/Arduino/libraries```. On Window you will have to copy and past the files to the correct destination - which I don't know! 
 
@@ -14,14 +14,6 @@ First, you need to clone that repo, then go into its folder and execute ```make 
 - ReaderMFRC522
 
 Fully implemented.
-	
-- ReaderMFRC530
-
-Not implemented yet.
-
-- ReaderMFRC531
-
-Not implemented yet.
 
 ### Tags
 
@@ -32,18 +24,6 @@ Fully implemented.
 - MifareUltralight
 
 Not implemented yet.
-
-- TagMF0ICU1
-
-Not implemented yet.
-
-- TagMF1ICS70
-
-Fully implemented.
-
-- TagMF1S503x
-
-Fully implemented.
 
 
 ## Examples
@@ -225,20 +205,19 @@ void loop() {
 }
 ```
 
-- TagMF1S503x tag detection.
+- MifareClassic tag detection.
 
 ``` c++
 #include <RegisterBasedSPIDevice.h>
 #include <ReaderMFRC522.h>
 #include <MifareClassic.h>
-#include <TagMF1S503x.h>
 
 #define SS_PIN      10
 #define RST_PIN     3
 
 RegisterBasedSPIDevice device(SS_PIN);
 ReaderMFRC522 reader(&device, RST_PIN);
-TagMF1S503x tag(&reader);
+MifareClassic tag(&reader);
 
 unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
@@ -259,20 +238,19 @@ void loop() {
 ```
 
 
-- TagMF1S503x UID dump.
+- MifareClassic UID dump.
 
 ``` c++
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
 #include <MifareClassic.h>
-#include <TagMF1S503x.h>
 
 #define SS_PIN      10
 #define RST_PIN     3
 
 RegisterBasedSPIDevice device(SS_PIN);
 ReaderMFRC522 reader(&device, RST_PIN);
-TagMF1S503x tag(&reader);
+MifareClassic tag(&reader);
 
 unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
@@ -300,20 +278,19 @@ void loop() {
 ```
 
 
-- TagMF1S503x dump whole card.
+- MifareClassic dump whole card.
 
 ``` c++
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
 #include <MifareClassic.h>
-#include <TagMF1S503x.h>
 
 #define SS_PIN      10
 #define RST_PIN     3
 
 RegisterBasedSPIDevice device(SS_PIN);
 ReaderMFRC522 reader(&device, RST_PIN);
-TagMF1S503x tag(&reader);
+MifareClassic tag(&reader);
 
 unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 unsigned char buffer[18];
@@ -354,13 +331,12 @@ void loop() {
 ```
 
 
-- TagMF1S503x read a key.
+- MifareClassic read a key.
 
 ``` c++
 #include <ReaderMFRC522.h>
 #include <RegisterBasedSPIDevice.h>
 #include <MifareClassic.h>
-#include <TagMF1S503x.h>
 
 #define SS_PIN          10
 #define RST_PIN         3
@@ -370,7 +346,7 @@ void loop() {
 
 RegisterBasedSPIDevice device(SS_PIN);
 ReaderMFRC522 reader(&device, RST_PIN);
-TagMF1S503x tag(&reader);
+MifareClassic tag(&reader);
 
 unsigned char keyA[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 unsigned char key[KEY_SIZE];
