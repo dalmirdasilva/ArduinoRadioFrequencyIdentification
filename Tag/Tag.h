@@ -110,11 +110,15 @@ public:
 
     TagType getType();
 
+    void setType(TagType type);
+
     TagSize getSize();
 
-    void setState(State state);
+    void setSize(TagSize size);
 
     State getState();
+
+    void setState(State state);
 
     bool detect(unsigned char command);
 

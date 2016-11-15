@@ -2,7 +2,7 @@
 #include <Tag.h>
 #include <MifareClassic.h>
 
-MifareClassic tag(NULL, Tag::TYPE_CLASSIC, Tag::SIZE_4K);
+MifareClassic tag(NULL);
 
 void is(unsigned int a, unsigned int b, const char *msg) {
     Serial.println(msg);
@@ -21,8 +21,10 @@ void is(unsigned int a, unsigned int b, const char *msg) {
 void setup() {
 
     Serial.begin(9600);
-    Serial.println("running tests...");
-
+    Serial.println("running tests for CLASSIC type and 4k size...");
+    tag.setType(Tag::TYPE_CLASSIC);
+    tag.setSize(Tag::SIZE_4K);
+    
     // getSize
     is(tag.getSize(), 4096, "getSize#0");
 

@@ -27,7 +27,7 @@ bool MifareClassic::readBlock(unsigned char address, unsigned char *buf) {
 }
 
 bool MifareClassic::writeBlock(unsigned char address, unsigned char *buf) {
-    unsigned char cmd[4] = { WRITE, address, 0, 0 };
+    unsigned char cmd[4] = { WRITE, address };
     if (isAddressSectorTrailer(address) && sectorTrailerProtected) {
         return false;
     }
@@ -98,7 +98,7 @@ bool MifareClassic::restore(unsigned char address) {
 }
 
 bool MifareClassic::arithmeticOperation(unsigned char operation, unsigned char address, uint32_t delta) {
-    unsigned char cmd[6] = { operation, address, 0, 0, 0, 0 };
+    unsigned char cmd[6] = { operation, address };
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
@@ -119,7 +119,7 @@ bool MifareClassic::arithmeticOperation(unsigned char operation, unsigned char a
 }
 
 bool MifareClassic::transfer(unsigned char address) {
-    unsigned char cmd[4] = { TRANSFER, address, 0, 0 };
+    unsigned char cmd[4] = { TRANSFER, address };
     if (key != NULL && !authenticate(address, keyType, key)) {
         return false;
     }
@@ -265,9 +265,6 @@ unsigned char MifareClassic::addressToBlock(unsigned char address) {
 }
 
 unsigned char MifareClassic::isAddressSectorTrailer(unsigned char address) {
-    Serial.println(address);
-    Serial.println(addressToSector(address));
-    Serial.println(getBlockCountInSector(addressToSector(address)));
     unsigned char blockCount = getBlockCountInSector(addressToSector(address));
     if (address >= MIFARE_CLASSIC_LOW_BLOCK_COUNT) {
         address -= MIFARE_CLASSIC_LOW_BLOCK_COUNT;

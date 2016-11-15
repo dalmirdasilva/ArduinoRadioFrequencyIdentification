@@ -23,16 +23,24 @@ Tag::TagType Tag::getType() {
     return type;
 }
 
+void Tag::setType(TagType type) {
+    this->type = type;
+}
+
 Tag::TagSize Tag::getSize() {
     return size;
 }
 
-void Tag::setState(Tag::State state) {
-    this->state = state;
+void Tag::setSize(TagSize size) {
+    this->size = size;
 }
 
 Tag::State Tag::getState() {
     return state;
+}
+
+void Tag::setState(Tag::State state) {
+    this->state = state;
 }
 
 bool Tag::activate() {
