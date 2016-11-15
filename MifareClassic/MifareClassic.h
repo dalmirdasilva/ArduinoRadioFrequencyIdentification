@@ -42,13 +42,13 @@ class MifareClassic: public Tag {
 public:
 
     enum KeyType {
-        KEY_A = 0x00,
-        KEY_B = 0x01
+        KEY_A,
+        KEY_B
     };
 
     enum BlockType {
-        DATA_BLOCK = 0x00,
-        VALUE_BLOCK = 0x01,
+        DATA_BLOCK,
+        VALUE_BLOCK,
     };
 
     enum Access {
@@ -60,6 +60,17 @@ public:
         CONDITION_5 = 0x05,
         CONDITION_6 = 0x06,
         CONDITION_7 = 0x07
+    };
+
+    enum Error {
+        UNDEFINED = 0,
+        DEVICE_NOT_ACTIVE_FOR_AUTH,
+        AUTO_AUTHENTICATION_FAILED,
+        SECTOR_TRAILER_WRITE_ATTEMPT_DENIED,
+        TRANSCEIVE_NACK,
+        INDEX_OUT_OF_BOUNDS,
+        OPERATION_DENIED_BY_ACCESS_BITS,
+        WRONG_ACCESS_BITS_LAYOUT
     };
 
     MifareClassic(Reader *reader);
@@ -196,9 +207,15 @@ public:
 
     unsigned char getSectorTrailerAddress(unsigned char sector);
 
+    inline void setError(Error error);
+
+    inline Error getError();
+
 protected:
 
     KeyType keyType;
+
+    Error error;
 
     unsigned char *key;
 

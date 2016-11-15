@@ -2,13 +2,14 @@
 #include <Reader.h>
 
 MifareClassic::MifareClassic(Reader *reader)
-        : Tag(reader), keyType(KEY_A), key(NULL), sectorTrailerProtected(true) {
+        : Tag(reader), keyType(KEY_A), error(UNDEFINED), key(NULL), sectorTrailerProtected(true) {
 }
 
 bool MifareClassic::authenticate(unsigned char address, KeyType type, unsigned char *key) {
     unsigned char authWith = (type == KEY_A) ? AUTH_KEY_A : AUTH_KEY_B;
     unsigned char buf[12] = { authWith, address };
     if (getState() != ACTIVE) {
+        setError(DEVICE_NOT_ACTIVE_FOR_AUTH);
         return false;
     }
     memcpy(&buf[2], key, MIFARE_CLASSIC_KEY_SIZE);
@@ -18,6 +19,7 @@ bool MifareClassic::authenticate(unsigned char address, KeyType type, unsigned c
 
 bool MifareClassic::readBlock(unsigned char address, unsigned char *buf) {
     if (key != NULL && !authenticate(address, keyType, key)) {
+        setError(AUTO_AUTHENTICATION_FAILED);
         return false;
     }
     buf[0] = READ;
@@ -28,13 +30,16 @@ bool MifareClassic::readBlock(unsigned char address, unsigned char *buf) {
 bool MifareClassic::writeBlock(unsigned char address, unsigned char *buf) {
     unsigned char cmd[4] = { WRITE, address };
     if (isAddressSectorTrailer(address) && sectorTrailerProtected) {
+        setError(SECTOR_TRAILER_WRITE_ATTEMPT_DENIED);
         return false;
     }
     if (key != NULL && !authenticate(address, keyType, key)) {
+        setError(AUTO_AUTHENTICATION_FAILED);
         return false;
     }
     transceive(cmd, cmd, 2);
     if (reader->getLastError() == Reader::NACK) {
+        setError(TRANSCEIVE_NACK);
         return false;
     }
     transceive(buf, buf, 16);
@@ -44,6 +49,7 @@ bool MifareClassic::writeBlock(unsigned char address, unsigned char *buf) {
 bool MifareClassic::readBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf) {
     unsigned char receive[18];
     if (len == 0 || from + len > 16) {
+        setError(INDEX_OUT_OF_BOUNDS);
         return false;
     }
     if (!readBlock(address, receive)) {
@@ -56,6 +62,7 @@ bool MifareClassic::readBlockSlice(unsigned char address, unsigned char from, un
 bool MifareClassic::writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf) {
     unsigned char receive[18];
     if (len == 0 || from + len > MIFARE_CLASSIC_BLOCK_SIZE) {
+        setError(INDEX_OUT_OF_BOUNDS);
         return false;
     }
     if (from == 0 && len == MIFARE_CLASSIC_BLOCK_SIZE && !readBlock(address, receive)) {
@@ -97,10 +104,12 @@ bool MifareClassic::restore(unsigned char address) {
 bool MifareClassic::arithmeticOperation(unsigned char operation, unsigned char address, uint32_t delta) {
     unsigned char cmd[6] = { operation, address };
     if (key != NULL && !authenticate(address, keyType, key)) {
+        setError(AUTO_AUTHENTICATION_FAILED);
         return false;
     }
     transceive(cmd, cmd, 2);
     if (reader->getLastError() == Reader::NACK) {
+        setError(TRANSCEIVE_NACK);
         return false;
     }
     memcpy(&cmd[0], &delta, 4);
@@ -116,6 +125,7 @@ bool MifareClassic::arithmeticOperation(unsigned char operation, unsigned char a
 bool MifareClassic::transfer(unsigned char address) {
     unsigned char cmd[4] = { TRANSFER, address };
     if (key != NULL && !authenticate(address, keyType, key)) {
+        setError(AUTO_AUTHENTICATION_FAILED);
         return false;
     }
     transceive(cmd, cmd, 2);
@@ -126,6 +136,7 @@ bool MifareClassic::createValueBlock(unsigned char address, uint32_t value, uint
     Access access;
     unsigned char buf[18];
     if (!getAccessCondition(address, &access) || (access != CONDITION_1 && access != CONDITION_6)) {
+        setError(OPERATION_DENIED_BY_ACCESS_BITS);
         return false;
     }
     fillValueBlock(buf, value, addr);
@@ -139,6 +150,7 @@ bool MifareClassic::readAccessBits(unsigned char sector, unsigned char *accessBi
 bool MifareClassic::writeAccessBits(unsigned char sector, unsigned char *accessBits, unsigned char *keyA, unsigned char *keyB) {
     unsigned char buf[18];
     if (!isAccessBitsCorrect(accessBits)) {
+        setError(WRONG_ACCESS_BITS_LAYOUT);
         return false;
     }
     memcpy(&buf[MIFARE_CLASSIC_KEY_TYPE_TO_POS(KEY_A)], keyA, MIFARE_CLASSIC_KEY_SIZE);
@@ -274,6 +286,14 @@ unsigned char MifareClassic::getSectorTrailerAddress(unsigned char sector) {
         sector -= MIFARE_CLASSIC_LOW_SECTOR_COUNT;
     }
     return offset + (sector * blockCount) + (blockCount - 1);
+}
+
+void MifareClassic::setError(Error error) {
+    this->error = error;
+}
+
+MifareClassic::Error MifareClassic::getError() {
+    return error;
 }
 
 void MifareClassic::fillValueBlock(unsigned char *buf, uint32_t value, uint8_t addr) {

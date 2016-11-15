@@ -15,6 +15,7 @@ inline void ReaderMFRC522::sendCommand(unsigned char command) {
 }
 
 void ReaderMFRC522::initialize() {
+    MODEbits mode;
     if (digitalRead(resetPin) == LOW) {
         digitalWrite(resetPin, HIGH);
         delay(50);
@@ -23,13 +24,27 @@ void ReaderMFRC522::initialize() {
     }
     clearRegisterBits(AUTO_TEST, AUTO_TEST_ENABLE);
 
-    // 100% ASK
+    // 100% ASK.
     setRegisterBits(TX_ASK, TX_ASK_FORCE_100_ASK);
 
-    // 25ms before timeout, auto start timer at the end of the transmission
+    // 25ms before timeout, auto start timer at the end of the transmission.
     configureTimer(0xf9, 0x03e8, true, false);
 
-    // Open the antenna
+    // Transmitter can only be started if an RF field is generated.
+    mode.TX_WAIT_RF = 1;
+
+    // Polarity of pin MFIN is active HIGH.
+    mode.POL_M_FIN = 1;
+
+    // CRC Initial value 0x6363.
+    mode.CRC_PRESET = 0x01;
+
+    // Write the configured MODE register.
+    writeRegister(MODE, mode.value);
+
+    setRxGain(RX_GAIN_MAX);
+
+    // Open the antenna.
     setAntennaOn();
 }
 
@@ -242,19 +257,6 @@ int ReaderMFRC522::authenticate(unsigned char *send) {
     return communicate(MF_AUTHENT, send, &receive, 12);
 }
 
-void ReaderMFRC522::stopCrypto() {
-    clearRegisterBits(STATUS2, STATUS2_MF_CRYPTO1_ON);
-}
-
-bool ReaderMFRC522::hasValidCrc(unsigned char *buf, unsigned char len) {
-    if (len <= 2) {
-        return false;
-    }
-    unsigned char crc[2];
-    calculateCrc(buf, len - 2, crc);
-    return (buf[len - 2] == crc[0]) && (buf[len - 1] == crc[1]);
-}
-
 unsigned int ReaderMFRC522::calculateCrc(unsigned char *buf, unsigned char len) {
     unsigned int dst;
     calculateCrc(buf, len, (unsigned char *) &dst);
@@ -303,10 +305,14 @@ inline bool ReaderMFRC522::waitForRegisterBits(unsigned char reg, unsigned char 
     return waitForRegisterBits(reg, mask, READER_DEFAULT_TIMEOUT);
 }
 
+ReaderMFRC522::Version ReaderMFRC522::getVersion() {
+    return (Version) readRegister(VERSION);
+}
+
 bool ReaderMFRC522::performSelfTest() {
 #ifdef ENABLE_SELF_TEST
     unsigned char *firmwareReference;
-    unsigned char buffer[64] = { 0 };
+    unsigned char buffer[64] = {0};
     writeRegister(AUTO_TEST, 0x00);
     softReset();
     flushQueue();
@@ -318,19 +324,19 @@ bool ReaderMFRC522::performSelfTest() {
     waitForRegisterBits(DIV_IRQ, DIV_IRQ_CRC_IRQ, 100);
     readRegisterBlock(FIFO_DATA, buffer, 64);
     switch (getVersion()) {
-    case CLONE:
+        case CLONE:
         firmwareReference = (unsigned char *) FM17522_FIRMWARE_REFERENCE;
         break;
-    case V0_0:
+        case V0_0:
         firmwareReference = (unsigned char *) MFRC522_FIRMWARE_REFERENCE_V0_0;
         break;
-    case V1_0:
+        case V1_0:
         firmwareReference = (unsigned char *) MFRC522_FIRMWARE_REFERENCE_V1_0;
         break;
-    case V2_0:
+        case V2_0:
         firmwareReference = (unsigned char *) MFRC522_FIRMWARE_REFERENCE_V2_0;
         break;
-    default:
+        default:
         return false;
     }
     for (unsigned char i = 0; i < 64; i++) {
@@ -350,6 +356,28 @@ void ReaderMFRC522::setBitFraming(unsigned char rxAlign, unsigned char txLastBit
     writeRegister(BIT_FRAMING, f.value);
 }
 
+void ReaderMFRC522::stopCrypto() {
+    clearRegisterBits(STATUS2, STATUS2_MF_CRYPTO1_ON);
+}
+
+void ReaderMFRC522::setRxGain(RxGain gain) {
+    configureRegisterBits(RFC_FG, RFC_FG_RX_GAIN, gain << 4);
+}
+
+ReaderMFRC522::RxGain ReaderMFRC522::getRxGain() {
+    unsigned char gain = readRegister(RFC_FG);
+    return (RxGain) ((gain & RFC_FG_RX_GAIN) >> 4);
+}
+
+bool ReaderMFRC522::hasValidCrc(unsigned char *buf, unsigned char len) {
+    if (len <= 2) {
+        return false;
+    }
+    unsigned char crc[2];
+    calculateCrc(buf, len - 2, crc);
+    return (buf[len - 2] == crc[0]) && (buf[len - 1] == crc[1]);
+}
+
 unsigned char ReaderMFRC522::getCollisionPosition() {
     COLLbits coll;
     coll.value = readRegister(COLL);
@@ -358,8 +386,4 @@ unsigned char ReaderMFRC522::getCollisionPosition() {
 
 void ReaderMFRC522::setuptForAnticollision() {
     clearRegisterBits(COLL, COLL_VALUES_AFTER_COLL);
-}
-
-ReaderMFRC522::Version ReaderMFRC522::getVersion() {
-    return (Version) readRegister(VERSION);
 }
