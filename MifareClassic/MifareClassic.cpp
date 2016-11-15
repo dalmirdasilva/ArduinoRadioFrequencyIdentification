@@ -121,6 +121,11 @@ bool MifareClassic::arithmeticOperation(unsigned char operation, unsigned char a
     memcpy(&cmd[0], &delta, 4);
     reader->calculateCrc(cmd, 4, &cmd[4]);
     reader->tranceive(cmd, cmd, 6);
+
+    /**
+     * The MIFARE Increment, Decrement, and Restore command part 2 does not
+     * provide an acknowledgement, so the regular time-out has to be used instead.
+     */
     return reader->getLastError() != Reader::NACK;
 }
 

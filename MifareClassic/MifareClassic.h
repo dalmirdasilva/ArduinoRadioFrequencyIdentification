@@ -67,28 +67,75 @@ public:
 
     /**
      * This function authenticates one card's sector (according to the block address) using the specified
-     * master key A or B, addressed with auth_mode. Having send the command to the card the function
-     * waits for the card's answer. This function is calling compatible with authentication functions former
-     * reader IC's. The keys are stored by the microcontroller, which should be capable for the key management.
+     * master key A or B, addressed with type (KEY_A or KEY_B). Having send the command to the card the function
+     * waits for the card's answer.
+     *
+     * @param   address             The block address.
+     * @param   type                One of possible keys type (KEY_A or KEY_B).
+     * @param   key                 Array of 6 bytes corresponding to the key.
+     * @return  bool                The successfulness of the operation.
      */
     bool authenticate(unsigned char address, KeyType type, unsigned char *key);
 
+    /**
+     * After successfully authenticated, a block can be read. This operations tries to read
+     * 16 bytes of the EEPROM.
+     *
+     * NOTE: It also depends on the configuration of the access bits of the corresponding sector.
+     *
+     * @param   address             The block address.
+     * @param   buf                 The buffer where read data will be stored.
+     * @return  bool                The successfulness of the operation.
+     */
     bool readBlock(unsigned char address, unsigned char *buf);
 
+    /**
+     * After successfully authenticated, a block can be write. This operations tries to read
+     * 16 bytes of the EEPROM.
+     *
+     * NOTE: It also depends on the configuration of the access bits of the corresponding sector.
+     *
+     * @param   address             The block address.
+     * @param   buf                 The buffer containing the data to be used.
+     * @return  bool                The successfulness of the operation.
+     */
     bool writeBlock(unsigned char address, unsigned char *buf);
 
+    /**
+     * It uses @see{readBlock} method to read a block, then slice the block returning
+     * only the desired portion of the block.
+     *
+     * @param   address             The block address.
+     * @param   from                Index of the first byte of the slice into the block.
+     * @param   len                 How many bytes the slice will contain.
+     * @param   buf                 The buffer where slice will be stored.
+     * @return  bool                The successfulness of the operation.
+     */
     bool readBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
 
+    /**
+     * It uses a combination of @see{readBlock} and @see{writeBlock} methods to read a block, then apply the
+     * slice into it and finally write the block again into the device.
+     *
+     * @param   address             The block address.
+     * @param   from                Index of the first byte of the slice into the block.
+     * @param   len                 How many bytes the slice contains.
+     * @param   buf                 The buffer containing the data to be used for the slice.
+     * @return  bool                The successfulness of the operation.
+     */
     bool writeBlockSlice(unsigned char address, unsigned char from, unsigned char len, unsigned char *buf);
 
+    /**
+     * It uses @see{readBlock} to read a block, then it returns only the byte at the pos position.
+     *
+     * @param   address             The block address.
+     * @param   pos                 The position of the byte inside the block.
+     * @return  int                 The read byte or -1 if error.
+     */
     int readByte(unsigned char address, unsigned char pos);
 
     bool writeByte(unsigned char address, unsigned char pos, unsigned char value);
 
-    /**
-     * Remark: The MIFARE Increment, Decrement, and Restore command part 2 does not
-     * provide an acknowledgement, so the regular time-out has to be used instead.
-     */
     bool increment(unsigned char address, uint32_t delta);
 
     bool decrement(unsigned char address, uint32_t delta);
@@ -110,7 +157,7 @@ public:
      * For the last 8 sectors (upper 2K bytes of NV-memory) access conditions can be set individually for a data area sized 5 blocks.
      *
      * BE CAREFUL WHEN CHANGING ACCESS BITS, EXPECIALLY THE PERMISSIONS TO THE SECTOR 3 (trailer sector), SINCE THE ACCESS BITS THEMSELVES CAN ALSO BE BLOCKED.
-     * THERE ONLY 3 PERMISSIONS THAT ALLOW FURTHER CHANGES ON ACCESS BITS: CONDITION_1, CONDITION_3 AND CONDITION_4; EVERY OTHER BLOCKS THEM FOREVER.
+     * THERE ONLY 3 PERMISSIONS THAT ALLOW FURTHER CHANGES ON ACCESS BITS: CONDITION_1, CONDITION_3 AND CONDITION_4; EVERY OTHER, BLOCKS THEM FOREVER.
      */
     bool setAccessCondition(unsigned char sector, unsigned char block, Access access, unsigned char *keyA, unsigned char *keyB);
 
@@ -133,8 +180,6 @@ public:
     void unpackAccessBits(unsigned char *accessBits, unsigned char *c1, unsigned char *c2, unsigned char *c3);
 
     void setSectorTrailerProtected(bool protect);
-
-
 
     unsigned char getSectorCount();
 
