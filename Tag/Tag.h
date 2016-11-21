@@ -18,11 +18,11 @@ class Tag {
 public:
 
     enum State {
-        POWER_OFF = 0x00,
-        IDLE = 0x01,
-        READY = 0x02,
-        ACTIVE = 0x03,
-        HALT = 0x04
+        POWER_OFF_STATE = 0x00,
+        IDLE_STATE = 0x01,
+        READY_STATE = 0x02,
+        ACTIVE_STATE = 0x03,
+        HALT_STATE = 0x04
     };
 
     enum TagType {
@@ -59,34 +59,7 @@ public:
         SEL_CL2 = 0x95,
 
         // Anti collision/Select, Cascade Level 3
-        SEL_CL3 = 0x97,
-
-        // HaLT command, Type A. Instructs an ACTIVE PICC to go to state HALT.
-        HLT_A = 0x50,
-
-        // Perform authentication with Key A.
-        AUTH_KEY_A = 0x60,
-
-        // Perform authentication with Key B.
-        AUTH_KEY_B = 0x61,
-
-        // Reads one 16 byte block from the authenticated sector of the PICC. Also used for MIFARE Ultralight.
-        READ = 0x30,
-
-        // Writes one 16 byte block to the authenticated sector of the PICC. Called "COMPATIBILITY WRITE" for MIFARE Ultralight.
-        WRITE = 0xa0,
-
-        // Decrements the contents of a block and stores the result in the internal data register.
-        DECREMENT = 0xc0,
-
-        // Increments the contents of a block and stores the result in the internal data register.
-        INCREMENT = 0xc1,
-
-        // Reads the contents of a block into the internal data register.
-        RESTORE = 0xc2,
-
-        // Writes the contents of the internal data register to a block.
-        TRANSFER = 0xb0,
+        SEL_CL3 = 0x97
     };
 
     struct Uid {
@@ -102,7 +75,7 @@ public:
 
     Tag(Reader *reader);
 
-    Tag(Reader *reader, TagType type, TagSize size);
+    virtual ~Tag();
 
     Uid getUid();
 
@@ -132,7 +105,7 @@ public:
 
     bool select();
 
-    bool halt();
+    virtual bool halt() = 0;
 
     /**
      * Helper for transceiving data with CRC calculation.

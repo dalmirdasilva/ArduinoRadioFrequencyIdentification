@@ -2,6 +2,21 @@
 
 [Documentation.pdf](Documentation.pdf)
 
+## Pinout
+
+```
+Board	-> Ardiomp
+
+SDA	-> 10 (SS_PIN defined in the sketch)
+SCK	-> 13
+MOSI	-> 11
+MISO	-> 12
+IRQ	-> 2 (int 0)
+GND	-> GND
+RST	-> 3 (RST_PIN defined in the sketch)
+3.3v	-> 3.3v
+```
+
 ## Dependency
 This project depends on my other library called: ArduinoDevice (https://github.com/dalmirdasilva/ArduinoDevice). ArduinoDevice library implements the communication layer between the Arduino and the Reader. It also has different capabilities to handle different protocols - like I2C and SPI. 
 

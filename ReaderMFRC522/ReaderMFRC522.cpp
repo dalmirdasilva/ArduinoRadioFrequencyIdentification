@@ -42,7 +42,7 @@ void ReaderMFRC522::initialize() {
     // Write the configured MODE register.
     writeRegister(MODE, mode.value);
 
-    setRxGain(RX_GAIN_MAX);
+    setRxGain(RX_GAIN_AVG);
 
     // Open the antenna.
     setAntennaOn();

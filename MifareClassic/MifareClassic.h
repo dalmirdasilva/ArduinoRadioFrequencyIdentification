@@ -17,6 +17,8 @@
 #define MIFARE_CLASSIC_UID_NEED_FOR_AUTH_LEN            4
 
 #define MIFARE_CLASSIC_BLOCK_SIZE                       16
+#define MIFARE_CLASSIC_CRC_SIZE                         2
+#define MIFARE_CLASSIC_BLOCK_SIZE_AND_CRC               MIFARE_CLASSIC_BLOCK_SIZE + MIFARE_CLASSIC_CRC_SIZE
 
 #define MIFARE_CLASSIC_LOW_SECTOR_COUNT                 32
 #define MIFARE_CLASSIC_LOW_BLOCK_COUNT_IN_SECTOR        4
@@ -70,7 +72,38 @@ public:
         TRANSCEIVE_NACK,
         INDEX_OUT_OF_BOUNDS,
         OPERATION_DENIED_BY_ACCESS_BITS,
-        WRONG_ACCESS_BITS_LAYOUT
+        WRONG_ACCESS_BITS_LAYOUT,
+        TRANSCEIVE_LENGTH_NOT_MATCH
+    };
+
+    enum Command {
+
+        // HaLT command, Type A. Instructs an ACTIVE PICC to go to state HALT.
+        HLT_A = 0x50,
+
+        // Perform authentication with Key A.
+        AUTH_KEY_A = 0x60,
+
+        // Perform authentication with Key B.
+        AUTH_KEY_B = 0x61,
+
+        // Reads one 16 byte block from the authenticated sector of the PICC. Also used for MIFARE Ultralight.
+        READ = 0x30,
+
+        // Writes one 16 byte block to the authenticated sector of the PICC. Called "COMPATIBILITY WRITE" for MIFARE Ultralight.
+        WRITE = 0xa0,
+
+        // Decrements the contents of a block and stores the result in the internal data register.
+        DECREMENT = 0xc0,
+
+        // Increments the contents of a block and stores the result in the internal data register.
+        INCREMENT = 0xc1,
+
+        // Reads the contents of a block into the internal data register.
+        RESTORE = 0xc2,
+
+        // Writes the contents of the internal data register to a block.
+        TRANSFER = 0xb0,
     };
 
     MifareClassic(Reader *reader);
@@ -94,7 +127,7 @@ public:
      * NOTE: It also depends on the configuration of the access bits of the corresponding sector.
      *
      * @param   address             The block address.
-     * @param   buf                 The buffer where read data will be stored.
+     * @param   buf                 The buffer where read data will be stored (16 bytes).
      * @return  bool                The successfulness of the operation.
      */
     bool readBlock(unsigned char address, unsigned char *buf);
@@ -106,7 +139,7 @@ public:
      * NOTE: It also depends on the configuration of the access bits of the corresponding sector.
      *
      * @param   address             The block address.
-     * @param   buf                 The buffer containing the data to be used.
+     * @param   buf                 The buffer containing the data to be used (16 bytes).
      * @return  bool                The successfulness of the operation.
      */
     bool writeBlock(unsigned char address, unsigned char *buf);
@@ -206,6 +239,8 @@ public:
     unsigned char addressToBlock(unsigned char address);
 
     unsigned char getSectorTrailerAddress(unsigned char sector);
+
+    bool halt();
 
     inline void setError(Error error);
 
