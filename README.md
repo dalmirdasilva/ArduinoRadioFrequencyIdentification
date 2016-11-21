@@ -5,7 +5,7 @@
 ## Pinout
 
 ```
-Board    -> Ardiomp
+Board    -> Arduino
 
 SDA      -> 10 (SS_PIN defined in the sketch)
 SCK      -> 13
