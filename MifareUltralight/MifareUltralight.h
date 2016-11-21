@@ -19,6 +19,8 @@
 #define MIFARE_ULTRALIGHT_LOCK_BYTES_PAGE_ADDRESS   2
 #define MIFARE_ULTRALIGHT_LOCK_BYTES_POS            2
 #define MIFARE_ULTRALIGHT_LOCK_BYTES_SIZE           2
+#define MIFARE_ULTRALIGHT_OTP_AREA_ADDRESS         3
+#define MIFARE_ULTRALIGHT_OTP_AREA_SIZE            4
 
 class MifareUltralight: public Tag {
 
@@ -27,6 +29,13 @@ public:
     enum SubType {
         ULTRALIBGHT,
         ULTRALIBGHT_C,
+    };
+
+    enum SpecialLockPosition {
+        BL_OTP,
+        BL_9_TO_4,
+        BL_15_TO_10,
+        L_OTP
     };
 
     enum Command {
@@ -91,9 +100,9 @@ public:
 
     bool lockPage(unsigned char pageAddress);
 
-    bool readOTPArea();
+    bool readOneTimeProgrammableArea(unsigned char *buf);
 
-    bool writeOTPArea();
+    bool writeOneTimeProgrammableArea(unsigned char *buf);
 
     /**
      * The HALT command is used to set the MF0ICU1 ICs into a different wait state (halt
@@ -105,7 +114,11 @@ public:
 
     void setLowPagesProtected(bool protect);
 
+    bool areLowPagesProtected();
+
     bool isAddressAtLowPages(unsigned char address);
+
+    bool checkWriteAtLowPages(unsigned char address);
 
     inline void setError(Error error);
 

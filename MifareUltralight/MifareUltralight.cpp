@@ -18,7 +18,7 @@ bool MifareUltralight::readPage(unsigned char address, unsigned char *buf) {
 
 bool MifareUltralight::writePage(unsigned char address, unsigned char *buf) {
     unsigned char buffer[6] = { WRITE, address };
-    if (isAddressAtLowPages(address) && lowPagesProtected) {
+    if (!checkWriteAtLowPages(address)) {
         setError(LOW_PAGES_WRITE_ATTEMPT_DENIED);
         return false;
     }
@@ -84,6 +84,23 @@ bool MifareUltralight::writeByte(unsigned char address, unsigned char pos, unsig
     return writePageSlice(address, pos, 1, &value);
 }
 
+bool MifareUltralight::lockPage(unsigned char pageAddress) {
+    unsigned char buffer[MIFARE_ULTRALIGHT_LOCK_BYTES_SIZE];
+    if (!readLockBytes(buffer)) {
+        return false;
+    }
+    buffer[pageAddress / 8] |= 0x01 << pageAddress % 8;
+    return writeLockBytes(buffer);
+}
+
+bool MifareUltralight::readOneTimeProgrammableArea(unsigned char *buf) {
+    return readPageSlice(MIFARE_ULTRALIGHT_OTP_AREA_ADDRESS, 0, MIFARE_ULTRALIGHT_OTP_AREA_SIZE, buf);
+}
+
+bool MifareUltralight::writeOneTimeProgrammableArea(unsigned char *buf) {
+    return writePageSlice(MIFARE_ULTRALIGHT_OTP_AREA_ADDRESS, 0, MIFARE_ULTRALIGHT_OTP_AREA_SIZE, buf);
+}
+
 bool MifareUltralight::halt() {
     unsigned char buffer[4] = { HALT };
     transceive(buffer, buffer, 2);
@@ -97,8 +114,16 @@ void MifareUltralight::setLowPagesProtected(bool protect) {
     lowPagesProtected = protect;
 }
 
+bool MifareUltralight::areLowPagesProtected() {
+    return lowPagesProtected;
+}
+
 bool MifareUltralight::isAddressAtLowPages(unsigned char address) {
     return address < MIFARE_ULTRALIGHT_LOW_PAGES_COUNT;
+}
+
+bool MifareUltralight::checkWriteAtLowPages(unsigned char address) {
+    return !isAddressAtLowPages(address) || !areLowPagesProtected();
 }
 
 void MifareUltralight::setError(Error error) {
