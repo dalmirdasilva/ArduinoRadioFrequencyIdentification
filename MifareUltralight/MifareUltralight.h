@@ -11,17 +11,20 @@
 #include <Reader.h>
 #include <Tag.h>
 
-#define MIFARE_ULTRALIGHT_PAGE_COUNT            16
-#define MIFARE_ULTRALIGHT_CRC_SIZE              2
-#define MIFARE_ULTRALIGHT_PAGE_SIZE             4
-#define MIFARE_ULTRALIGHT_PAGE_SIZE_PLUS_CRC    MIFARE_ULTRALIGHT_PAGE_SIZE + MIFARE_ULTRALIGHT_CRC_SIZE
-#define MIFARE_ULTRALIGHT_LOW_PAGES_COUNT       4
+#define MIFARE_ULTRALIGHT_PAGE_COUNT                16
+#define MIFARE_ULTRALIGHT_CRC_SIZE                  2
+#define MIFARE_ULTRALIGHT_PAGE_SIZE                 4
+#define MIFARE_ULTRALIGHT_PAGE_SIZE_PLUS_CRC        MIFARE_ULTRALIGHT_PAGE_SIZE + MIFARE_ULTRALIGHT_CRC_SIZE
+#define MIFARE_ULTRALIGHT_LOW_PAGES_COUNT           4
+#define MIFARE_ULTRALIGHT_LOCK_BYTES_PAGE_ADDRESS   2
+#define MIFARE_ULTRALIGHT_LOCK_BYTES_POS            2
+#define MIFARE_ULTRALIGHT_LOCK_BYTES_SIZE           2
 
 class MifareUltralight: public Tag {
 
 public:
 
-    enum TagType {
+    enum SubType {
         ULTRALIBGHT,
         ULTRALIBGHT_C,
     };
@@ -71,7 +74,7 @@ public:
     /**
      * Read the lock bytes.
      */
-    bool readLockBytes(unsigned char *lockBytes);
+    bool readLockBytes(unsigned char *buf);
 
     /**
      * The locking and block-locking bits are set by a WRITE command to page 2. Bytes 2 and 3
@@ -80,7 +83,7 @@ public:
      * is set to logic 1, it cannot be changed back to logic 0.
      * The contents of bytes 0 and 1 of page 2 are unaffected by the corresponding data bytes of the WRITE command.
      */
-    bool writeLockBytes(unsigned char *lockBytes);
+    bool writeLockBytes(unsigned char *buf);
 
     int readByte(unsigned char address, unsigned char pos);
 
@@ -110,7 +113,7 @@ public:
 
 protected:
 
-    TagType type;
+    SubType subType;
 
     Error error;
 

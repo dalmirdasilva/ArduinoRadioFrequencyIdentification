@@ -84,20 +84,15 @@ bool MifareClassic::writeBlockSlice(unsigned char address, unsigned char from, u
 }
 
 int MifareClassic::readByte(unsigned char address, unsigned char pos) {
-    unsigned char buffer[MIFARE_CLASSIC_BLOCK_SIZE_AND_CRC];
-    if (!readBlock(address, buffer)) {
+    unsigned char value;
+    if (!readBlockSlice(address, pos, 1, &value)) {
         return -1;
     }
-    return buffer[pos];
+    return value;
 }
 
 bool MifareClassic::writeByte(unsigned char address, unsigned char pos, unsigned char value) {
-    unsigned char buffer[MIFARE_CLASSIC_BLOCK_SIZE_AND_CRC];
-    if (!readBlock(address, buffer)) {
-        return false;
-    }
-    buffer[pos] = value;
-    return writeBlock(address, buffer);
+    return writeBlockSlice(address, pos, 1, &value);
 }
 
 bool MifareClassic::increment(unsigned char address, uint32_t delta) {

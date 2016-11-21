@@ -3,7 +3,7 @@
 #include <Tag.h>
 
 MifareUltralight::MifareUltralight(Reader *reader)
-        : Tag(reader), error(UNDEFINED), lowPagesProtected(true) {
+        : Tag(reader), subType(ULTRALIBGHT), error(UNDEFINED), lowPagesProtected(true) {
 }
 
 bool MifareUltralight::readPage(unsigned char address, unsigned char *buf) {
@@ -64,18 +64,32 @@ bool MifareUltralight::writePageSlice(unsigned char address, unsigned char from,
     return writePage(address, buffer);
 }
 
-bool MifareUltralight::readLockBytes(unsigned char *lockBytes) {
+bool MifareUltralight::readLockBytes(unsigned char *buf) {
+    return readPageSlice(MIFARE_ULTRALIGHT_LOCK_BYTES_PAGE_ADDRESS, MIFARE_ULTRALIGHT_LOCK_BYTES_POS, MIFARE_ULTRALIGHT_LOCK_BYTES_SIZE, buf);
+}
 
+bool MifareUltralight::writeLockBytes(unsigned char *buf) {
+    return writePageSlice(MIFARE_ULTRALIGHT_LOCK_BYTES_PAGE_ADDRESS, MIFARE_ULTRALIGHT_LOCK_BYTES_POS, MIFARE_ULTRALIGHT_LOCK_BYTES_SIZE, buf);
+}
+
+int MifareUltralight::readByte(unsigned char address, unsigned char pos) {
+    unsigned char value;
+    if (!readPageSlice(address, pos, 1, &value)) {
+        return -1;
+    }
+    return value;
+}
+
+bool MifareUltralight::writeByte(unsigned char address, unsigned char pos, unsigned char value) {
+    return writePageSlice(address, pos, 1, &value);
 }
 
 bool MifareUltralight::halt() {
     unsigned char buffer[4] = { HALT };
-    reader->stopCrypto();
     transceive(buffer, buffer, 2);
     setState(HALT_STATE);
 
-    // If the PICC responds with any modulation during a period of 1 ms after the end of the frame containing the
-    // HLTA command, this response shall be interpreted as 'not acknowledge'.
+    // Passive (implicit) ACKnowledge without PICC answer.
     return reader->getLastError() == Reader::TIMEOUT_ERROR;
 }
 
@@ -84,7 +98,7 @@ void MifareUltralight::setLowPagesProtected(bool protect) {
 }
 
 bool MifareUltralight::isAddressAtLowPages(unsigned char address) {
-    return address <= MIFARE_ULTRALIGHT_LOW_PAGES_COUNT;
+    return address < MIFARE_ULTRALIGHT_LOW_PAGES_COUNT;
 }
 
 void MifareUltralight::setError(Error error) {
