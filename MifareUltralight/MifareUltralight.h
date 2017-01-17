@@ -100,6 +100,13 @@ public:
 
     bool lockPage(unsigned char pageAddress);
 
+    /**
+     * Page 03h is the OTP page and it is preset so that all bits are set to logic 0 after production.
+     * These bytes can be bitwise modified using the WRITE command.
+     * The WRITE command bytes and the current contents of the OTP bytes are bitwise OR’ed.
+     * The result is the new OTP byte contents. This process is irreversible and if a bit is set to
+     * logic 1, it cannot be changed back to logic 0.
+     */
     bool readOneTimeProgrammableArea(unsigned char *buf);
 
     bool writeOneTimeProgrammableArea(unsigned char *buf);

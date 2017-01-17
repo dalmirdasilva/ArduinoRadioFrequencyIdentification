@@ -33,7 +33,7 @@ bool MifareClassic::readBlock(unsigned char address, unsigned char *buf) {
 
 bool MifareClassic::writeBlock(unsigned char address, unsigned char *buf) {
     unsigned char buffer[MIFARE_CLASSIC_BLOCK_SIZE_AND_CRC] = { WRITE, address };
-    if (isAddressSectorTrailer(address) && sectorTrailerProtected) {
+    if (isAddressSectorTrailer(address) && isSectorTrailerProtected()) {
         setError(SECTOR_TRAILER_WRITE_ATTEMPT_DENIED);
         return false;
     }
@@ -311,6 +311,10 @@ void MifareClassic::setError(Error error) {
 
 MifareClassic::Error MifareClassic::getError() {
     return error;
+}
+
+bool MifareClassic::isSectorTrailerProtected() {
+    return sectorTrailerProtected;
 }
 
 void MifareClassic::fillValueBlock(unsigned char *buf, uint32_t value, uint8_t addr) {

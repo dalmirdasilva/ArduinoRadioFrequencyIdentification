@@ -256,6 +256,8 @@ protected:
 
     bool sectorTrailerProtected;
 
+    bool isSectorTrailerProtected();
+
     void fillValueBlock(unsigned char *buf, uint32_t value, uint8_t addr);
 };
 
